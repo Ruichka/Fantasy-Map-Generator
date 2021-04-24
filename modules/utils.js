@@ -447,6 +447,19 @@ function getAdjective(string) {
 // get ordinal out of integer: 1 => 1st
 const nth = n => n+(["st","nd","rd"][((n+90)%100-10)%10-1]||"th");
 
+// get two-letters code (abbreviation) from string
+function abbreviate(name, restricted = []) {
+  const parsed = name.replace("Old ", "O ").replace(/[()]/g, ""); // remove Old prefix and parentheses
+  const words = parsed.split(" ");
+  const letters = words.join("");
+
+  let code = words.length === 2 ? words[0][0]+words[1][0] : letters.slice(0,2);
+  for (let i = 1; i < letters.length-1 && restricted.includes(code); i++) {
+    code = letters[0] + letters[i].toUpperCase();
+  }
+  return code;
+}
+
 // conjunct array: [A,B,C] => "A, B and C"
 function list(array) {
   if (!Intl.ListFormat) return array.join(", ");
@@ -592,15 +605,15 @@ JSON.isValid = str => {
 
 function getBase64(url, callback) {
   const xhr = new XMLHttpRequest();
-  xhr.onload = function() {
+  xhr.onload = function () {
     const reader = new FileReader();
-    reader.onloadend = function() {
+    reader.onloadend = function () {
       callback(reader.result);
-    }
+    };
     reader.readAsDataURL(xhr.response);
   };
-  xhr.open('GET', url);
-  xhr.responseType = 'blob';
+  xhr.open("GET", url);
+  xhr.responseType = "blob";
   xhr.send();
 }
 

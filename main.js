@@ -58,6 +58,7 @@ let ice = viewbox.append("g").attr("id", "ice").style("display", "none");
 let prec = viewbox.append("g").attr("id", "prec").style("display", "none");
 let population = viewbox.append("g").attr("id", "population");
 let emblems = viewbox.append("g").attr("id", "emblems").style("display", "none");
+let goods = viewbox.append("g").attr("id", "goods");
 let labels = viewbox.append("g").attr("id", "labels");
 let icons = viewbox.append("g").attr("id", "icons");
 let burgIcons = icons.append("g").attr("id", "burgIcons");
@@ -360,7 +361,6 @@ function showWelcomeMessage() {
       <li>New ocean pattern by Kiwiroo (v1.61)</li>
     </ul>
 
-    <iframe width="100%" height="auto" src="https://www.youtube.com/embed/XBSNkTf1Ddg?controls=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     <p>Join our ${discord} and ${reddit} to ask questions, share maps, discuss the Generator and Worlbuilding, report bugs and propose new features.</p>
     <span>Thanks for all supporters on ${patreon}!</i></span>`;
 
@@ -555,6 +555,9 @@ function generate() {
     Rivers.generate();
     Lakes.defineGroup();
     defineBiomes();
+
+    Resources.generate();
+    Resources.draw();
 
     rankCells();
     Cultures.generate();
@@ -754,8 +757,8 @@ function defineMapSize() {
   function getSizeAndLatitude() {
     const template = document.getElementById("templateInput").value; // heightmap template
     const part = grid.features.some(f => f.land && f.border); // if land goes over map borders
-    const max = part ? 85 : 100; // max size
-    const lat = part ? gauss(P(.5) ? 30 : 70, 15, 20, 80) : gauss(50, 20, 15, 85); // latiture shift
+    const max = part ? 80 : 100; // max size
+    const lat = () => gauss(P(.5) ? 40 : 60, 15, 25, 75); // latiture shift
 
     if (!part) {
       if (template === "Pangea") return [100, 50];
@@ -766,14 +769,14 @@ function defineMapSize() {
       if (template === "Low Island" && P(.1)) return [100, 50];
     }
 
-    if (template === "Pangea") return [gauss(75, 20, 30, max), lat];
-    if (template === "Volcano") return [gauss(30, 20, 10, max), lat];
-    if (template === "Mediterranean") return [gauss(30, 30, 15, 80), lat];
-    if (template === "Peninsula") return [gauss(15, 15, 5, 80), lat];
-    if (template === "Isthmus") return [gauss(20, 20, 3, 80), lat];
-    if (template === "Atoll") return [gauss(10, 10, 2, max), lat];
+    if (template === "Pangea") return [gauss(70, 20, 30, max), lat()];
+    if (template === "Volcano") return [gauss(20, 20, 10, max), lat()];
+    if (template === "Mediterranean") return [gauss(25, 30, 15, 80), lat()];
+    if (template === "Peninsula") return [gauss(15, 15, 5, 80), lat()];
+    if (template === "Isthmus") return [gauss(15, 20, 3, 80), lat()];
+    if (template === "Atoll") return [gauss(5, 10, 2, max), lat()];
 
-    return [gauss(40, 20, 15, max), lat]; // Continents, Archipelago, High Island, Low Island
+    return [gauss(30, 20, 15, max), lat()]; // Continents, Archipelago, High Island, Low Island
   }
 }
 

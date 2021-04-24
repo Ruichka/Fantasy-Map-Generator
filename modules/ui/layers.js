@@ -120,13 +120,17 @@ function restoreLayers() {
 }
 
 function toggleHeight(event) {
+  if (customization === 1) {
+    tip("You cannot turn off the layer when heightmap is in edit mode", false, "error");
+    return;
+  }
+
   if (!terrs.selectAll("*").size()) {
     turnButtonOn("toggleHeight");
     drawHeightmap();
     if (event && isCtrlClick(event)) editStyle("terrs");
   } else {
     if (event && isCtrlClick(event)) {editStyle("terrs"); return;}
-    if (customization === 1) {tip("You cannot turn off the layer when heightmap is in edit mode", false, "error"); return;}
     turnButtonOff("toggleHeight");
     terrs.selectAll("*").remove();
   }
@@ -484,8 +488,8 @@ function drawIce() {
   const used = new Uint8Array(cells.i.length);
   Math.random = aleaPRNG(seed);
 
-  const shieldMin = -6; // max temp to form ice shield (glacier)
-  const icebergMax = 2; // max temp to form an iceberg
+  const shieldMin = -8; // max temp to form ice shield (glacier)
+  const icebergMax = 1; // max temp to form an iceberg
 
   for (const i of grid.cells.i) {
     const t = temp[i];
@@ -644,7 +648,7 @@ function drawReligions() {
   }
 
   const bodyData = body.map((p, i) => [p.length > 10 ? p : null, i, religions[i].color]).filter(d => d[0]);
-  relig.selectAll("path").data(bodyData).enter().append("path").attr("d", d => d[0]).attr("fill", d => d[2]).attr("stroke", "none").attr("id", d => "religion"+d[1]);
+  relig.selectAll("path").data(bodyData).enter().append("path").attr("d", d => d[0]).attr("fill", d => d[2]).attr("id", d => "religion"+d[1]);
   const gapData = gap.map((p, i) => [p.length > 10 ? p : null, i, religions[i].color]).filter(d => d[0]);
   relig.selectAll(".path").data(gapData).enter().append("path").attr("d", d => d[0]).attr("fill", "none").attr("stroke", d => d[2]).attr("id", d => "religion-gap"+d[1]).attr("stroke-width", "10px");
 
@@ -968,6 +972,8 @@ function toggleGrid(event) {
     turnButtonOn("toggleGrid");
     drawGrid();
     calculateFriendlyGridSize();
+
+
     if (event && isCtrlClick(event)) editStyle("gridOverlay");
   } else {
     if (event && isCtrlClick(event)) {editStyle("gridOverlay"); return;}
@@ -977,51 +983,22 @@ function toggleGrid(event) {
 }
 
 function drawGrid() {
-  TIME && console.time("drawGrid");
   gridOverlay.selectAll("*").remove();
-  const type = styleGridType.value;
-  const size = Math.max(+styleGridSize.value || +gridOverlay.attr("size"), 2);
-  if (type === "pointyHex" || type === "flatHex") {
-    const points = getHexGridPoints(size, type);
-    const hex = "m" + getHex(size, type).slice(0, 4).join("l");
-    const d = points.map(p => "M" + p + hex).join("");
-    gridOverlay.append("path").attr("d", d);
-  } else if (type === "square") {
-    const pathX = d3.range(size, svgWidth, size).map(x => "M" + rn(x, 2) + ",0v" + svgHeight).join(" ");
-    const pathY = d3.range(size, svgHeight, size).map(y => "M0," + rn(y, 2) + "h" + svgWidth).join(" ");
-    gridOverlay.append("path").attr("d", pathX + pathY);
-  }
+  const pattern = "#pattern_" + (gridOverlay.attr("type") || "pointyHex");
+  const stroke = gridOverlay.attr("stroke") || "#808080";
+  const width = gridOverlay.attr("stroke-width") || .5;
+  const dasharray = gridOverlay.attr("stroke-dasharray") || null;
+  const linecap = gridOverlay.attr("stroke-linecap") || null;
+  const scale = gridOverlay.attr("scale") || 1;
+  const dx = gridOverlay.attr("dx") || 0;
+  const dy = gridOverlay.attr("dy") || 0;
+  const tr = `scale(${scale}) translate(${dx} ${dy})`;
 
-  // calculate hexes centers
-  function getHexGridPoints(size, type) {
-    const points = [];
-    const rt3 = Math.sqrt(3);
-    const off = type === "pointyHex" ? rn(rt3 * size / 2, 2) : rn(size * 3 / 2, 2);
-    const ySpace = type === "pointyHex" ? rn(size * 3 / 2, 2) : rn(rt3 * size / 2, 2);
-    const xSpace = type === "pointyHex" ? rn(rt3 * size, 2) : rn(size * 3, 2);
-    for (let y = 0, l = 0; y < graphHeight+ySpace; y += ySpace, l++) {
-      for (let x = l % 2 ? 0 : off; x < graphWidth+xSpace; x += xSpace) {points.push([rn(x, 2), rn(y, 2)]);}
-    }
-    return points;
-  }
+  const maxWidth = Math.max(+mapWidthInput.value, graphWidth);
+  const maxHeight = Math.max(+mapHeightInput.value, graphHeight);
 
-  // calculate hex points
-  function getHex(radius, type) {
-    let x0 = 0, y0 = 0;
-    const s = type === "pointyHex" ? 0 : Math.PI / -6;
-    const thirdPi = Math.PI / 3;
-    let angles = [s, s + thirdPi, s + 2 * thirdPi, s + 3 * thirdPi, s + 4 * thirdPi, s + 5 * thirdPi];
-    return angles.map(function(a) {
-      const x1 = Math.sin(a) * radius;
-      const y1 = -Math.cos(a) * radius;
-      const dx = rn(x1 - x0, 2);
-      const dy = rn(y1 - y0, 2);
-      x0 = x1, y0 = y1;
-      return [rn(dx, 2), rn(dy, 2)];
-    });
-  }
-
-  TIME && console.timeEnd("drawGrid");
+  d3.select(pattern).attr("stroke", stroke).attr("stroke-width", width).attr("stroke-dasharray", dasharray).attr("stroke-linecap", linecap).attr("patternTransform", tr);
+  gridOverlay.append("rect").attr("width", maxWidth).attr("height", maxHeight).attr("fill", "url(" + pattern + ")").attr("stroke", "none");
 }
 
 function toggleCoordinates(event) {
