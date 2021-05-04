@@ -491,8 +491,9 @@ document.addEventListener("keyup", event => {
   else if (shift && key === 78) editNamesbase(); // Shift + "N" to edit Namesbase
   else if (shift && key === 90) editZones(); // Shift + "Z" to edit Zones
   else if (shift && key === 82) editReligions(); // Shift + "R" to edit Religions
+  else if (shift && key === 81) editResources(); // Shift + "Q" to edit Resources
   else if (shift && key === 89) openEmblemEditor(); // Shift + "Y" to edit Emblems
-  else if (shift && key === 81) editUnits(); // Shift + "Q" to edit Units
+  else if (shift && key === 87) editUnits(); // Shift + "W" to edit Units
   else if (shift && key === 79) editNotes(); // Shift + "O" to edit Notes
   else if (shift && key === 84) overviewBurgs(); // Shift + "T" to open Burgs overview
   else if (shift && key === 86) overviewRivers(); // Shift + "V" to open Rivers overview
@@ -531,6 +532,7 @@ document.addEventListener("keyup", event => {
   else if (key === 78) togglePopulation(); // "N" to toggle Population layer
   else if (key === 74) toggleIce(); // "J" to toggle Ice layer
   else if (key === 65) togglePrec(); // "A" to toggle Precipitation layer
+  else if (key === 81) toggleResources(); // "Q" to toggle Resources layer
   else if (key === 89) toggleEmblems(); // "Y" to toggle Emblems layer
   else if (key === 76) toggleLabels(); // "L" to toggle Labels layer
   else if (key === 73) toggleIcons(); // "I" to toggle Icons layer

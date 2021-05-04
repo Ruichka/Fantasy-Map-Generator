@@ -6,8 +6,10 @@
 
   // TO-DO
   // apply logic on heightmap edit
-  // apply logic on burgs regenearation
+  // apply logic on burgs regeneration
   // apply logic on population recalculation
+  // apply logic on save
+  // apply logic on load
 
   let cells;
 
@@ -41,7 +43,7 @@
       {i: 25, name: "Incense", icon: "resource-incense", color: "#ebe5a7", value: 25, chance: 2, model: "desertAndTropicalForest", bonus: {prestige: 2}},
       {i: 26, name: "Silk", icon: "resource-silk", color: "#e0f0f8", value: 30, chance: 1, model: "tropicalForest", bonus: {prestige: 2}},
       {i: 27, name: "Spices", icon: "resource-spices", color: "#e99c75", value: 30, chance: 2, model: "tropicalForest", bonus: {prestige: 2}},
-      {i: 28, name: "Amber", icon: "resource-amber", color: "#ffc233", value: 15, chance: 2, model: "forestSeashore", bonus: {prestige: 1}},
+      {i: 28, name: "Amber", icon: "resource-amber", color: "#e68200", value: 15, chance: 2, model: "forestSeashore", bonus: {prestige: 1}},
       {i: 29, name: "Furs", icon: "resource-furs", color: "#8a5e51", value: 13, chance: 2, model: "borealForest", bonus: {prestige: 1}},
       {i: 30, name: "Sheeps", icon: "resource-sheeps", color: "#53b574", value: 2, chance: 5, model: "pasturesAndTemperateForest", bonus: {infantry: 1}},
       {i: 31, name: "Slaves", icon: "resource-slaves", color: "#757575", value: 10, chance: 3, model: "lessHabitableSeashore", bonus: {population: 2}},
@@ -56,15 +58,6 @@
       {i: 40, name: "Tobacco", icon: "resource-tobacco", color: "#6D5843", value: 10, chance: 2, model: "tropicalForest", bonus: {prestige: 1}},
     ]
   }
-
-  const chance = v => {
-    if (v < .01) return false;
-    if (v > 99.99) return true;
-    return v / 100 > Math.random();
-  }
-
-  const temp = i => grid.cells.temp[pack.cells.g[i]];
-  const group = i => pack.features[cells.f[i]].group;
 
   const models = {
     forest: i => [6, 7, 8].includes(cells.biome[i]),
@@ -95,9 +88,14 @@
     colderWaters: i => cells.t[i] < 0 && temp(i) < 8,
   }
 
-  // Biomes: 0: Marine, 1: Hot desert, 2: Cold desert, 3: Savanna, 4: Grassland,
-  //         5: Tropical seasonal forest, 6: Temperate deciduous forest, 7: Tropical rainforest,
-  //         8: Temperate rainforest, 9: Taiga, 10: Tundra, 11: Glacier, 12: Wetland
+  const chance = v => {
+    if (v < .01) return false;
+    if (v > 99.99) return true;
+    return v / 100 > Math.random();
+  }
+
+  const temp = i => grid.cells.temp[pack.cells.g[i]];
+  const group = i => pack.features[cells.f[i]].group;
 
   const generate = function() {
     console.time("generateResources");
@@ -133,23 +131,6 @@
     console.table(pack.resources);
   }
 
-  const draw = function() {
-    console.time("drawResources");
-    let resourcesHTML = "";
-    for (const i of cells.i) {
-      if (!cells.resource[i]) continue;
-      const resource = pack.resources.find(resource => resource.i === cells.resource[i]);
-      const [x, y] = cells.p[i];
-      resourcesHTML += `<g>
-        <circle data-i="${resource.i}" cx=${x} cy=${y} r="3" fill="${resource.color}" stroke="${resource.stroke}" />
-        <use href="#${resource.icon}" x="${x-3}" y="${y-3}" width="6" height="6"/>
-      </g>`;
-    }
-
-    goods.html(resourcesHTML);
-    console.timeEnd("drawResources");
-  }
-
-return {generate, getDefault, draw};
+return {generate, getDefault};
 
 })));
