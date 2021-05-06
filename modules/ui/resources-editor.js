@@ -17,7 +17,7 @@ function editResources() {
 
   // add listeners
   document.getElementById("resourcesEditorRefresh").addEventListener("click", resourcesEditorAddLines);
-  document.getElementById("resourcesEditStyle").addEventListener("click", () => editStyle("goods"));
+  document.getElementById("resourcesRegenerate").addEventListener("click", regenerateResources);
   document.getElementById("resourcesLegend").addEventListener("click", toggleLegend);
   document.getElementById("resourcesPercentage").addEventListener("click", togglePercentageMode);
   document.getElementById("resourcesExport").addEventListener("click", downloadResourcesData);
@@ -25,17 +25,28 @@ function editResources() {
   // add line for each resource
   function resourcesEditorAddLines() {
     let lines = "";
+    const categories = [...new Set(pack.resources.map(r => r.category))].sort();
+    const categoryOptions = category => categories.map(c => `<option ${c === category ? "selected" : ""} value="${c}">${c}</option>`).join("");
+
+    const models = [...new Set(pack.resources.map(r => r.model))].sort();
+    const modelOptions = model => models.map(m => `<option ${m === model ? "selected" : ""} value="${m}">${m}</option>`).join("");
 
     // // {i: 33, name: "Saltpeter", icon: "resource-saltpeter", color: "#e6e3e3", value: 8, chance: 2, model: "habitability", bonus: {artillery: 3}}
     for (const r of pack.resources) {
-      lines += `<div class="states resources" data-id=${r.i} data-name="${r.name}" data-color="${r.color}" data-chance="${r.chance}" data-value="${r.value}" data-model="${r.model}" data-cells="${r.cells}">
-        <svg data-tip="Resource background color. Click to change" width=".9em" height=".9em" style="margin-bottom:-1px"><rect x="0" y="0" width="100%" height="100%" fill="${r.color}" class="fillRect pointer"></svg>
-        <input data-tip="Resource name. Click and type to change" class="resourceName" value="${r.name}" autocorrect="off" spellcheck="false">
-        <select data-tip="Resource type. Select to change" class="resourceType">No data</select>
+      const stroke = Resources.getStroke(r.color);
+      lines += `<div class="states resources" data-id=${r.i} data-name="${r.name}" data-color="${r.color}"
+        data-category="${r.category}" data-chance="${r.chance}"
+        data-value="${r.value}" data-model="${r.model}" data-cells="${r.cells}">
+        <svg data-tip="Resource icon. Click to change" width="2em" height="2em" class="icon">
+          <circle cx="50%" cy="50%" r="42%" fill="${r.color}" stroke="${stroke}"/>
+          <use href="#${r.icon}" x="10%" y="10%" width="80%" height="80%"/>
+        </svg>
+        <input data-tip="Resource name. Click and category to change" class="resourceName" value="${r.name}" autocorrect="off" spellcheck="false">
+        <select data-tip="Resource category. Select to change">${categoryOptions(r.category)}</select>
+        <select data-tip="Resource spread model. Select to change" class="model">${modelOptions(r.model)}</select>
 
-        <input data-tip="Resource basic value. Click and type to change" value="${r.value}" type="number">
-        <input data-tip="Resource generation chance in eligible cell. Click and type to change" value="${r.chance}" type="number">
-        <input data-tip="Resource spread model. Select to change" value="${r.model}">
+        <input data-tip="Resource basic value. Click and type to change" value="${r.value}" type="number" min=0 max=100 step=1 />
+        <input data-tip="Resource generation chance in eligible cell. Click and type to change" value="${r.chance}" type="number" min=0 max=100 step=.1 />
         <div data-tip="Number of cells with resource" class="cells">${r.cells}</div>
 
         <span data-tip="Remove resource" class="icon-trash-empty hide"></span>
@@ -50,11 +61,27 @@ function editResources() {
     // body.querySelectorAll("div.resources").forEach(el => el.addEventListener("mouseenter", ev => resourceHighlightOn(ev)));
     // body.querySelectorAll("div.resources").forEach(el => el.addEventListener("mouseleave", ev => resourceHighlightOff(ev)));
     // body.querySelectorAll("div.states").forEach(el => el.addEventListener("click", selectResourceOnLineClick));
-    // body.querySelectorAll("rect.fillRect").forEach(el => el.addEventListener("click", resourceChangeColor));
+    body.querySelectorAll("svg.icon").forEach(el => el.addEventListener("click", resourceChangeColor));
 
     if (body.dataset.type === "percentage") {body.dataset.type = "absolute"; togglePercentageMode();}
     applySorting(resourcesHeader);
     $("#resourcesEditor").dialog({width: fitContent()});
+  }
+
+  function resourceChangeColor() {
+    const circle = this.querySelector("circle");
+    const resource = Resources.get(+this.parentNode.dataset.id);
+
+    const callback = function(fill) {
+      const stroke = Resources.getStroke(fill);
+      circle.setAttribute("fill", fill);
+      circle.setAttribute("stroke", stroke);
+      resource.color = fill;
+      resource.stroke = stroke;
+      goods.selectAll(`circle[data-i='${resource.i}']`).attr("fill", fill).attr("stroke", stroke);
+    }
+
+    openPicker(resource.color, callback, {allowHatching: false});
   }
 
   function toggleLegend() {
@@ -78,12 +105,12 @@ function editResources() {
   }
 
   function downloadResourcesData() {
-    let data = "Id,Resource,Type,Color,Icon,Value,Chance,Model,Cells\n"; // headers
+    let data = "Id,Resource,Category,Color,Icon,Value,Chance,Model,Cells\n"; // headers
 
     body.querySelectorAll(":scope > div").forEach(function(el) {
       data += el.dataset.id + ",";
       data += el.dataset.name + ",";
-      data += el.dataset.type + ",";
+      data += el.dataset.category + ",";
       data += el.dataset.color + ",";
       data += el.dataset.icon + ",";
       data += el.dataset.value + ",";

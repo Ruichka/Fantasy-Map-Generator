@@ -1326,6 +1326,7 @@
           <button id="regenerateStates" data-tip="Click to select new capitals and regenerate states. Emblems and military forces will be regenerated as well, burgs will remain as they are">States</button>
           <button id="regenerateProvinces" data-tip="Click to regenerate provinces. States will remain as they are">Provinces</button>
           <button id="regenerateBurgs" data-tip="Click to regenerate all unlocked burgs and routes. States will remain as they are">Burgs</button>
+          <button id="regenerateResources" data-tip="Click to regenerate resources">Resources</button>
           <button id="regenerateEmblems" data-tip="Click to regenerate all emblems">Emblems</button>
           <button id="regenerateReligions" data-tip="Click to regenerate religions">Religions</button>
           <button id="regenerateCultures" data-tip="Click to regenerate cultures">Cultures</button>
@@ -3003,12 +3004,12 @@
 
     <div id="resourcesEditor" class="dialog stable" style="display: none">
       <div id="resourcesHeader" class="header">
-        <div style="left:1.8em" data-tip="Click to sort by resource name" class="sortable alphabetically" data-sortby="name">Resource&nbsp;</div>
-        <div style="left:12.6em" data-tip="Click to sort by resource type" class="sortable alphabetically" data-sortby="type">Type&nbsp;</div>
-        <div style="left:18em" data-tip="Click to sort by resource basic value" class="sortable" data-sortby="value">Value&nbsp;</div>
-        <div style="left:25.1em" data-tip="Click to sort by generation chance" class="sortable" data-sortby="chance">Chance&nbsp;</div>
-        <div style="left:42.1em" data-tip="Click to sort spread model" class="sortable alphabetically" data-sortby="model">Model&nbsp;</div>
-        <div style="left:47em" data-tip="Click to sort by number of cells" class="sortable icon-sort-number-down" data-sortby="cells">Cells&nbsp;</div>
+        <div style="left:2.8em" data-tip="Click to sort by resource name" class="sortable alphabetically" data-sortby="name">Resource&nbsp;</div>
+        <div style="left:8.8em" data-tip="Click to sort by resource category" class="sortable alphabetically" data-sortby="category">Category&nbsp;</div>
+        <div style="left:14em" data-tip="Click to sort spread model" class="sortable alphabetically" data-sortby="model">Model&nbsp;</div>
+        <div style="left:20em" data-tip="Click to sort by resource basic value" class="sortable" data-sortby="value">Value&nbsp;</div>
+        <div style="left:23.6em" data-tip="Click to sort by generation chance" class="sortable" data-sortby="chance">Chance&nbsp;</div>
+        <div style="left:28em" data-tip="Click to sort by number of cells" class="sortable icon-sort-number-down" data-sortby="cells">Cells&nbsp;</div>
       </div>
       <div id="resourcesBody" class="table" data-type="absolute"></div>
 
@@ -3018,7 +3019,7 @@
     
       <div id="resourcesBottom">
         <button id="resourcesEditorRefresh" data-tip="Refresh the Editor" class="icon-cw"></button>
-        <button id="resourcesEditStyle" data-tip="Edit resources style in Style Editor" class="icon-adjust"></button>
+        <button id="resourcesRegenerate" data-tip="Regenerate resources based on current configuration" class="icon-retweet"></button>
         <button id="resourcesLegend" data-tip="Toggle Legend box" class="icon-list-bullet"></button>
         <button id="resourcesPercentage" data-tip="Toggle percentage / absolute values display mode" class="icon-percent"></button>
         <button id="resourcesAdd" data-tip="Add a new resource" class="icon-plus"></button>

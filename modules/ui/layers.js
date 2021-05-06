@@ -1315,12 +1315,11 @@ function drawEmblems() {
 function toggleResources(event) {
   if (!layerIsOn("toggleResources")) {
     turnButtonOn("toggleResources");
-    $('#goods').fadeIn();
-    if (!goods.selectAll("*").size()) drawResources();
+    drawResources();
     if (event && isCtrlClick(event)) editStyle("goods");
   } else {
     if (event && isCtrlClick(event)) {editStyle("goods"); return;}
-    $('#goods').fadeOut();
+    goods.selectAll("*").remove();
     turnButtonOff("toggleResources");
   }
 }
@@ -1330,10 +1329,12 @@ function drawResources() {
   let resourcesHTML = "";
   for (const i of pack.cells.i) {
     if (!pack.cells.resource[i]) continue;
-    const resource = pack.resources.find(resource => resource.i === pack.cells.resource[i]);
+    const resource = Resources.get(pack.cells.resource[i]);
     const [x, y] = pack.cells.p[i];
+    const stroke = Resources.getStroke(resource.color);
+
     resourcesHTML += `<g>
-      <circle data-i="${resource.i}" cx=${x} cy=${y} r="3" fill="${resource.color}" stroke="${resource.stroke}" />
+      <circle data-i="${resource.i}" cx=${x} cy=${y} r="3" fill="${resource.color}" stroke="${stroke}" />
       <use href="#${resource.icon}" x="${x-3}" y="${y-3}" width="6" height="6"/>
     </g>`;
   }
