@@ -1,4 +1,4 @@
-Azgaar's Fantasy Map Generator k
+Azgaar's Fantasy Map Generator
 This is an open-source software available under MIT license
 https://github.com/Azgaar/Fantasy-Map-Generator
 
