@@ -18,6 +18,11 @@ if (rn(localStorage.getItem("version"), 1) !== rn(version, 1)) {
   setTimeout(showWelcomeMessage, 8000);
 }
 
+// language
+if (!localStorage.getItem("currentLanguage")) localStorage.currentLanguage = "english";
+let currentLanguage = localStorage.getItem("currentLanguage");
+const localsData = uploadLocalizationFile();
+
 // append svg layers (in default order)
 let svg = d3.select("#map");
 let defs = svg.select("#deftemp");
