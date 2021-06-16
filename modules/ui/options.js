@@ -130,6 +130,7 @@ optionsContent.addEventListener("input", function (event) {
   else if (id === "emblemShape") changeEmblemShape(value);
   else if (id === "tooltipSizeInput" || id === "tooltipSizeOutput") changeTooltipSize(value);
   else if (id === "transparencyInput") changeDialogsTransparency(value);
+  else if (id === "languageInput") changeLanguage(value);
 });
 
 optionsContent.addEventListener("change", function (event) {
@@ -884,4 +885,22 @@ function toggle3dOptions() {
   function changeResolution() {
     ThreeD.setResolution(this.value);
   }
+}
+
+function changeLanguage(language) {
+  alertMessage.innerHTML = "The generator requires restart in order to apply language changes";
+  $("#alert").dialog({
+    resizable: false,
+    title: "Restart generator",
+    width: "27em",
+    buttons: {
+      Reload: function () {
+        document.location.reload()
+        $(this).dialog("close");
+      },
+      Later: function () {
+        $(this).dialog("close");
+      }
+    }
+  });
 }
