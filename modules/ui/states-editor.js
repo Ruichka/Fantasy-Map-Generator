@@ -89,8 +89,8 @@ function editStates() {
     for (const s of pack.states) {
       if (s.removed) continue;
       const area = s.area * distanceScaleInput.value ** 2;
-      const rural = s.rural * populationRate.value;
-      const urban = s.urban * populationRate.value * urbanization.value;
+      const rural = s.rural * populationRate;
+      const urban = s.urban * populationRate * urbanization;
       const population = rn(rural + urban);
       const populationTip = `Total population: ${si(population)}; Rural population: ${si(rural)}; Urban population: ${si(urban)}. Click to change`;
       totalArea += area;
@@ -362,8 +362,8 @@ function editStates() {
       tip('State does not have any cells, cannot change population', false, 'error');
       return;
     }
-    const rural = rn(s.rural * populationRate.value);
-    const urban = rn(s.urban * populationRate.value * urbanization.value);
+    const rural = rn(s.rural * populationRate);
+    const urban = rn(s.urban * populationRate * urbanization);
     const total = rural + urban;
     const l = (n) => Number(n).toLocaleString();
 
@@ -405,7 +405,7 @@ function editStates() {
         cells.forEach((i) => (pack.cells.pop[i] *= ruralChange));
       }
       if (!isFinite(ruralChange) && +ruralPop.value > 0) {
-        const points = ruralPop.value / populationRate.value;
+        const points = ruralPop.value / populationRate;
         const cells = pack.cells.i.filter((i) => pack.cells.state[i] === state);
         const pop = points / cells.length;
         cells.forEach((i) => (pack.cells.pop[i] = pop));
@@ -417,7 +417,7 @@ function editStates() {
         burgs.forEach((b) => (b.population = rn(b.population * urbanChange, 4)));
       }
       if (!isFinite(urbanChange) && +urbanPop.value > 0) {
-        const points = urbanPop.value / populationRate.value / urbanization.value;
+        const points = urbanPop.value / populationRate / urbanization;
         const burgs = pack.burgs.filter((b) => !b.removed && b.state === state);
         const population = rn(points / burgs.length, 4);
         burgs.forEach((b) => (b.population = population));
@@ -459,8 +459,21 @@ function editStates() {
 
   function stateRemovePrompt(state) {
     if (customization) return;
-    const message = 'Are you sure you want to remove the state? <br>This action cannot be reverted';
-    confirmationDialog({title: 'Remove state', message, confirm: 'Remove', onConfirm: () => stateRemove(state)});
+
+    alertMessage.innerHTML = 'Are you sure you want to remove the state? <br>This action cannot be reverted';
+    $('#alert').dialog({
+      resizable: false,
+      title: 'Remove state',
+      buttons: {
+        Remove: function () {
+          $(this).dialog('close');
+          stateRemove(state);
+        },
+        Cancel: function () {
+          $(this).dialog('close');
+        }
+      }
+    });
   }
 
   function stateRemove(state) {
@@ -627,8 +640,8 @@ function editStates() {
 
       const unit = areaUnit.value === 'square' ? ' ' + distanceUnitInput.value + '²' : ' ' + areaUnit.value;
       const area = d.data.area * distanceScaleInput.value ** 2 + unit;
-      const rural = rn(d.data.rural * populationRate.value);
-      const urban = rn(d.data.urban * populationRate.value * urbanization.value);
+      const rural = rn(d.data.rural * populationRate);
+      const urban = rn(d.data.urban * populationRate * urbanization);
 
       const option = statesTreeType.value;
       const value =
@@ -836,18 +849,15 @@ function editStates() {
   }
 
   function adjustProvinces(affectedProvinces) {
-    const cells = pack.cells,
-      provinces = pack.provinces,
-      states = pack.states;
+    const {cells, provinces, states} = pack;
     const form = {Zone: 1, Area: 1, Territory: 2, Province: 1};
 
     affectedProvinces.forEach((p) => {
-      // do nothing if neutral lands are captured
-      if (!p) return;
+      if (!p) return; // do nothing if neutral lands are captured
+      const old = provinces[p].state;
 
       // remove province from state provinces list
-      const old = provinces[p].state;
-      if (states[old].provinces.includes(p)) states[old].provinces.splice(states[old].provinces.indexOf(p), 1);
+      if (states[old]?.provinces?.includes(p)) states[old].provinces.splice(states[old].provinces.indexOf(p), 1);
 
       // find states owning at least 1 province cell
       const provCells = cells.i.filter((i) => cells.province[i] === p);
@@ -858,7 +868,7 @@ function editStates() {
       if (owner) {
         const name = provinces[p].name;
 
-        // if province is historical part of abouther state province, unite with old province
+        // if province is a historical part of another state's province, unite with old province
         const part = states[owner].provinces.find((n) => name.includes(provinces[n].name));
         if (part) {
           provinces[p].removed = true;
@@ -1056,8 +1066,8 @@ function editStates() {
       data += el.dataset.burgs + ',';
       data += el.dataset.area + ',';
       data += el.dataset.population + ',';
-      data += `${Math.round(pack.states[key].rural * populationRate.value)},`;
-      data += `${Math.round(pack.states[key].urban * populationRate.value * urbanization.value)}\n`;
+      data += `${Math.round(pack.states[key].rural * populationRate)},`;
+      data += `${Math.round(pack.states[key].urban * populationRate * urbanization)}\n`;
     });
 
     const name = getFileName('States') + '.csv';

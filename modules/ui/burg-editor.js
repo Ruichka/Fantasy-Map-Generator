@@ -10,7 +10,7 @@ function editBurg(id) {
   burgLabels.selectAll('text').call(d3.drag().on('start', dragBurgLabel)).classed('draggable', true);
   updateBurgValues();
 
-  const my = id || d3.event.target.tagName === 'text' ? 'center bottom-20' : 'center top+20';
+  const my = id || d3.event.target.tagName === 'text' ? 'center bottom-40' : 'center top+40';
   const at = id ? 'center' : d3.event.target.tagName === 'text' ? 'top' : 'bottom';
   const of = id ? 'svg' : d3.event.target;
 
@@ -57,14 +57,17 @@ function editBurg(id) {
   function updateBurgValues() {
     const id = +elSelected.attr('data-id');
     const b = pack.burgs[id];
-    const province = pack.cells.province[b.cell];
-    const provinceName = province ? pack.provinces[province].fullName + ', ' : '';
-    const stateName = pack.states[b.state].fullName || pack.states[b.state].name;
-    document.getElementById('burgProvinceAndState').innerHTML = provinceName + stateName;
 
     document.getElementById('burgName').value = b.name;
     document.getElementById('burgType').value = b.type || 'Generic';
-    document.getElementById('burgPopulation').value = rn(b.population * populationRate.value * urbanization.value);
+    document.getElementById('burgPopulation').value = rn(b.population * populationRate * urbanization);
+
+    const stateName = pack.states[b.state].fullName || pack.states[b.state].name;
+    const province = pack.cells.province[b.cell];
+    const provinceName = province ? pack.provinces[province].fullName : '';
+    document.getElementById('burgState').innerHTML = stateName;
+    document.getElementById('burgProvince').innerHTML = provinceName;
+
     document.getElementById('burgEditAnchorStyle').style.display = +b.port ? 'inline-block' : 'none';
 
     // update list and select culture
@@ -94,6 +97,12 @@ function editBurg(id) {
     if (b.shanty) document.getElementById('burgShanty').classList.remove('inactive');
     else document.getElementById('burgShanty').classList.add('inactive');
 
+    // economics block
+    document.getElementById('burgProduction').innerHTML = getProduction(b.produced);
+    const deals = pack.trade.deals;
+    document.getElementById('burgExport').innerHTML = getExport(deals.filter((deal) => deal.exporter === b.i));
+    document.getElementById('burgImport').innerHTML = '';
+
     //toggle lock
     updateBurgLockIcon();
 
@@ -112,6 +121,41 @@ function editBurg(id) {
     document.getElementById('burgEmblem').setAttribute('href', '#' + coaID);
   }
 
+  function getProduction(pool) {
+    let html = '';
+
+    for (const resourceId in pool) {
+      const {name, unit, icon} = Resources.get(+resourceId);
+      const production = pool[resourceId];
+      const unitName = production > 1 ? unit + 's' : unit;
+
+      html += `<span data-tip="${name}: ${production} ${unitName}">
+        <svg class="resIcon"><use href="#${icon}"></svg>
+        <span style="margin: 0 0.2em 0 -0.2em">${production}</span>
+      </span>`;
+    }
+
+    return html;
+  }
+
+  function getExport(dealsArray) {
+    if (!dealsArray.length) return 'no';
+
+    const totalIncome = rn(d3.sum(dealsArray.map((deal) => deal.burgIncome)));
+    const exported = dealsArray.map((deal) => {
+      const {resourceId, quantity, burgIncome} = deal;
+      const {name, unit, icon} = Resources.get(resourceId);
+      const unitName = quantity > 1 ? unit + 's' : unit;
+
+      return `<span data-tip="${name}: ${quantity} ${unitName}. Income: ${rn(burgIncome)}">
+        <svg class="resIcon"><use href="#${icon}"></svg>
+        <span style="margin: 0 0.2em 0 -0.2em">${quantity}</span>
+      </span>`;
+    });
+
+    return `${totalIncome}: ${exported.join('')}`;
+  }
+
   // [-1; 31] °C, source: https://en.wikipedia.org/wiki/List_of_cities_by_average_temperature
   function getTemperatureLikeness(temperature) {
     if (temperature < -15) return 'nowhere in the real-world';
@@ -123,7 +167,7 @@ function editBurg(id) {
       'Okhotsk (Russia)',
       'Fairbanks (Alaska)',
       'Nuuk (Greenland)',
-      'Murmansk',
+      'Murmansk', // -5 - 0
       'Arkhangelsk',
       'Anchorage',
       'Tromsø',
@@ -133,7 +177,7 @@ function editBurg(id) {
       'Halifax',
       'Prague',
       'Copenhagen',
-      'London',
+      'London', // 1 - 10
       'Antwerp',
       'Paris',
       'Milan',
@@ -143,7 +187,7 @@ function editBurg(id) {
       'Lisbon',
       'Barcelona',
       'Marrakesh',
-      'Alexandria',
+      'Alexandria', // 11 - 20
       'Tegucigalpa',
       'Guangzhou',
       'Rio de Janeiro',
@@ -153,11 +197,10 @@ function editBurg(id) {
       'Mogadishu',
       'Bangkok',
       'Aden',
-      'Khartoum',
-      'Mecca'
-    ];
-    const city = cities[temperature + 5];
-    return city ? 'in ' + city : null;
+      'Khartoum'
+    ]; // 21 - 30
+    if (temperature > 30) return 'Mecca';
+    return cities[temperature + 5] || null;
   }
 
   function dragBurgLabel() {
@@ -332,7 +375,7 @@ function editBurg(id) {
 
   function changePopulation() {
     const id = +elSelected.attr('data-id');
-    pack.burgs[id].population = rn(burgPopulation.value / populationRate.value / urbanization.value, 4);
+    pack.burgs[id].population = rn(burgPopulation.value / populationRate / urbanization, 4);
   }
 
   function toggleFeature() {
@@ -423,7 +466,7 @@ function editBurg(id) {
       const cells = pack.cells;
       const name = elSelected.text();
       const size = Math.max(Math.min(rn(burg.population), 100), 6); // to be removed once change on MFDC is done
-      const population = rn(burg.population * populationRate.value * urbanization.value);
+      const population = rn(burg.population * populationRate * urbanization);
 
       const s = burg.MFCG || defSeed;
       const cell = burg.cell;
@@ -547,7 +590,7 @@ function editBurg(id) {
     const id = +elSelected.attr('data-id');
     if (pack.burgs[id].capital) {
       alertMessage.innerHTML = `You cannot remove the burg as it is a state capital.<br><br>
-        Please change state capital first. You can do it using Burgs Editor (shift + T)`;
+        You can change the capital using Burgs Editor (shift + T)`;
       $('#alert').dialog({
         resizable: false,
         title: 'Remove burg',
