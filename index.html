@@ -45,36 +45,36 @@
     xmlns:svg="http://www.w3.org/2000/svg">
     <defs>
       <g id="filters">
-        <filter id="blurFilter" x="-1" y="-1" width="100" height="100">
+        <filter id="blurFilter" name="Blur 0.2" x="-1" y="-1" width="100" height="100">
           <feGaussianBlur in="SourceGraphic" stdDeviation="0.2"/>
         </filter>
-        <filter id="blur1" x="-1" y="-1" width="100" height="100">
+        <filter id="blur1" name="Blur 1" x="-1" y="-1" width="100" height="100">
           <feGaussianBlur in="SourceGraphic" stdDeviation="1"/>
         </filter>
-        <filter id="blur3" x="-1" y="-1" width="100" height="100">
+        <filter id="blur3" name="Blur 3" x="-1" y="-1" width="100" height="100">
           <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
         </filter>
-        <filter id="blur5" x="-1" y="-1" width="100" height="100">
+        <filter id="blur5" name="Blur 5" x="-1" y="-1" width="100" height="100">
           <feGaussianBlur in="SourceGraphic" stdDeviation="5"/>
         </filter>
-        <filter id="blur7" x="-1" y="-1" width="100" height="100">
+        <filter id="blur7" name="Blur 7" x="-1" y="-1" width="100" height="100">
           <feGaussianBlur in="SourceGraphic" stdDeviation="7"/>
         </filter>
-        <filter id="blur10" x="-1" y="-1" width="100" height="100">
+        <filter id="blur10" name="Blur 10" x="-1" y="-1" width="100" height="100">
           <feGaussianBlur in="SourceGraphic" stdDeviation="10"/>
         </filter>
-        <filter id="splotch">
+        <filter id="splotch" name="Splotch">
           <feTurbulence type="fractalNoise" baseFrequency=".01" numOctaves="4"/>
           <feColorMatrix values="0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 -0.9 1.2" result="texture"/>
           <feComposite in="SourceGraphic" in2="texture" operator="in"/>
         </filter>
-        <filter id="bluredSplotch">
+        <filter id="bluredSplotch" name="Blurred Splotch">
           <feTurbulence type="fractalNoise" baseFrequency=".01" numOctaves="4"/>
           <feColorMatrix values="0 0 0 0 0, 0 0 0 0 0, 0 0 0 0 0, 0 0 0 -0.9 1.2" result="texture"/>
           <feComposite in="SourceGraphic" in2="texture" operator="in"/>
           <feGaussianBlur stdDeviation="4"/>
         </filter>
-        <filter id="dropShadow">
+        <filter id="dropShadow" name="Shadow 2">
           <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
           <feOffset dx="1" dy="2"/>
           <feMerge>
@@ -82,7 +82,7 @@
               <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
-        <filter id="dropShadow01">
+        <filter id="dropShadow01" name="Shadow 0.1">
           <feGaussianBlur in="SourceAlpha" stdDeviation=".1"/>
           <feOffset dx=".2" dy=".3"/>
           <feMerge>
@@ -90,7 +90,7 @@
               <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
-        <filter id="dropShadow05">
+        <filter id="dropShadow05" name="Shadow 0.5">
           <feGaussianBlur in="SourceAlpha" stdDeviation=".5"/>
           <feOffset dx=".5" dy=".7"/>
           <feMerge>
@@ -98,23 +98,23 @@
               <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
-        <filter id="outline">
+        <filter id="outline" name="Outline">
           <feGaussianBlur in="SourceAlpha" stdDeviation="1"/>
           <feMerge>
               <feMergeNode/>
               <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
-        <filter id="pencil">
+        <filter id="pencil" name="Pencil">
           <feTurbulence baseFrequency="0.03" numOctaves="6" type="fractalNoise"/>
           <feDisplacementMap scale="3" in="SourceGraphic" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
-        <filter id="turbulence">
+        <filter id="turbulence" name="Turbulence">
           <feTurbulence baseFrequency="0.1" numOctaves="3" type="fractalNoise"/>
           <feDisplacementMap scale="10" in="SourceGraphic" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
 
-        <filter id="paper" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <filter id="paper" name="Paper" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
           <feGaussianBlur stdDeviation="1 1" x="0%" y="0%" width="100%" height="100%" in="SourceGraphic" edgeMode="none" result="blur"/>
           <feTurbulence type="fractalNoise" baseFrequency="0.05 0.05" numOctaves="4" seed="1" stitchTiles="stitch" result="turbulence"/>
           <feDiffuseLighting surfaceScale="2" diffuseConstant="1" lighting-color="#707070" in="turbulence" result="diffuseLighting">
@@ -124,7 +124,7 @@
           <feComposite in="composite" in2="SourceGraphic" operator="in" x="0%" y="0%" width="100%" height="100%" result="composite1"/>
         </filter>
 
-        <filter id="crumpled" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <filter id="crumpled" name="Crumpled" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
           <feGaussianBlur stdDeviation="2 2" x="0%" y="0%" width="100%" height="100%" in="SourceGraphic" edgeMode="none" result="blur"/>
           <feTurbulence type="turbulence" baseFrequency="0.05 0.05" numOctaves="4" seed="1" stitchTiles="stitch" result="turbulence"/>
           <feDiffuseLighting surfaceScale="2" diffuseConstant="1" lighting-color="#828282" in="turbulence" result="diffuseLighting">
@@ -134,16 +134,16 @@
           <feComposite in="composite" in2="SourceGraphic" operator="in" x="0%" y="0%" width="100%" height="100%" result="composite1"/>
         </filter>
 
-        <filter id="filter-grayscale">
+        <filter id="filter-grayscale" name="Grayscale">
           <feColorMatrix values="0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0"/>
         </filter>
-        <filter id="filter-sepia">
+        <filter id="filter-sepia" name="Sepia">
           <feColorMatrix values="0.393 0.769 0.189 0 0 0.349 0.686 0.168 0 0 0.272 0.534 0.131 0 0 0 0 0 1 0"/>
         </filter>
-        <filter id="filter-dingy">
+        <filter id="filter-dingy" name="Dingy">
           <feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0.3 0.3 0 0 0 0 0 1 0"></feColorMatrix>
         </filter>
-        <filter id="filter-tint">
+        <filter id="filter-tint" name="Tint">
           <feColorMatrix values="1.1 0 0 0 0  0 1.1 0 0 0  0 0 0.9 0 0  0 0 0 1 0"></feColorMatrix>
         </filter>
       </g>
@@ -173,7 +173,7 @@
           <circle cx="2.5" cy="2.5" r="1" style="fill: black"/>
         </pattern>
         <pattern id="hatch7" patternUnits="userSpaceOnUse" width="4" height="4">
-          <line x1="0" y1="0" x2="0" y2="3" transform="rotate(-45 0 0)" style="stroke:black; stroke-width:1.5"></line>
+          <line x1="0" y1="0" x2="0" y2="3" transform="rotate(-45 0 0)" style="stroke:black; stroke-width:1.5" />
         </pattern>
         <pattern id="hatch8" patternUnits="userSpaceOnUse" width="4" height="4">
           <line x1="0" y1="0" x2="0" y2="3" style="stroke:black; stroke-width:2.5"/>
@@ -188,22 +188,22 @@
           <line x1="0" y1="0" x2="0" y2="3" style="stroke:black; stroke-width:2.5"/>
         </pattern>
         <pattern id="hatch12" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse" width="4" height="4">
-          <line x1="0" y1="1" x2="0" y2="3" style="stroke:black; stroke-width:1.5"></line>
-          <line x1="1" y1="0" x2="3" y2="0" style="stroke:black; stroke-width:1.5"></line>
+          <line x1="0" y1="1" x2="0" y2="3" style="stroke:black; stroke-width:1.5" />
+          <line x1="1" y1="0" x2="3" y2="0" style="stroke:black; stroke-width:1.5" />
         </pattern>
         <pattern id="hatch13" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse" width="4" height="4">
-          <line x1="0" y1="0" x2="0" y2="3" style="stroke:black; stroke-width:1.5"></line>
-          <line x1="0" y1="0" x2="3" y2="0" style="stroke:black; stroke-width:1.5"></line>
+          <line x1="0" y1="0" x2="0" y2="3" style="stroke:black; stroke-width:1.5" />
+          <line x1="0" y1="0" x2="3" y2="0" style="stroke:black; stroke-width:1.5" />
         </pattern>
       </g>
 
       <g id="deftemp">
         <mask id="land"></mask>
         <mask id="water">
-          <rect x="0" y="0" width="100%" height="100%" fill="white"></rect>
+          <rect x="0" y="0" width="100%" height="100%" fill="white" />
         </mask>
         <mask id="fog" style="stroke-width: 10; stroke: black; stroke-linejoin: round; stroke-opacity: .1;">
-          <rect x="0" y="0" width="100%" height="100%" fill="white" stroke="none"></rect>
+          <rect x="0" y="0" width="100%" height="100%" fill="white" stroke="none" />
         </mask>
         <g id="textPaths"></g>
         <g id="statePaths"></g>
@@ -212,8 +212,8 @@
 
       <g id="defs-markers">
         <symbol id="marker0" viewBox="0 0 30 30">
-          <path d="M6,19 l9,10 L24,19" fill="#000000" stroke="none"></path>
-          <circle cx="15" cy="15" r="10" stroke-width="1" stroke="#000000" fill="#ffffff"></circle>
+          <path d="M6,19 l9,10 L24,19" fill="#000000" stroke="none" />
+          <circle cx="15" cy="15" r="10" stroke-width="1" stroke="#000000" fill="#ffffff" />
           <text x="50%" y="50%" fill="#000000" stroke-width="0" stroke="#3200ff" font-size="22px" dominant-baseline="central">?</text>
         </symbol>
       </g>
@@ -234,7 +234,7 @@
   <div id="loading">
     <div id="titleName"><t data-t="titleName">Azgaar's</t></div>
     <div id="title"><t data-t="title">Fantasy Map Generator</t></div>
-    <div id="version"><t data-t="version">v. </t>1.61</div>
+    <div id="version"><t data-t="version">v. </t>1.65</div>
     <p id="loading-text"><t data-t="loading">LOADING</t><span>.</span><span>.</span><span>.</span></p>
   </div>
 
@@ -316,13 +316,15 @@
       </div>
 
       <div id="styleContent" class="tabcontent">
-        <p data-tip="Select a style preset" style="display: inline-block">Style preset:</p>
+        <p data-tip="Select a style preset. State labels may required regeneration if font is changed" style="display: inline-block">Style preset:</p>
         <select data-tip="Select a style preset" id="stylePreset" onchange="changeStylePreset(this.value)" style="width:45%">
           <option value="styleDefault" data-system=1 selected>Default</option>
           <option value="styleAncient" data-system=1>Ancient</option>
           <option value="styleGloom" data-system=1>Gloom</option>
           <option value="styleClean" data-system=1>Clean</option>
-          <option value="styleMonochrome" data-system=1>Monochrome (for heightmap)</option>
+          <option value="styleLight" data-system=1>Light</option>
+          <option value="styleWatercolor" data-system=1>Watercolor</option>
+          <option value="styleMonochrome" data-system=1>Monochrome</option>
         </select>
         <button id="addStyleButton" data-tip="Click to save current style as a new preset" class="icon-plus styleButton" style="display: inline-block" onclick="addStylePreset()"></button>
         <button id="removeStyleButton" data-tip="Click to remove current custom style preset" class="icon-minus styleButton" style="display: none" onclick="removeStylePreset()"></button>
@@ -363,16 +365,15 @@
           <option value="compass">Wind Rose</option>
           <option value="zones">Zones</option>
         </select>
-        <!-- <button id="restoreStyle" data-tip="Click to restore default style for all elements" class="icon-ccw styleButton" onclick="askToRestoreDefaultStyle()"></button> -->
 
         <table id="styleElements">
-          <caption id="styleIsOff" data-tip="The selected layer is not visible. See the buttons above to toggle it on">Please ensure the element is toggled on!</caption>
+          <caption id="styleIsOff" data-tip="The selected layer is not visible. Toogle it on to see style changes effect">Ensure the element visibility is toggled on!</caption>
 
           <tbody id="styleGroup">
             <tr data-tip="Select element group">
               <td><b>Group</b></td>
               <td>
-                <select id="styleGroupSelect"><option value="regions">regions</option></select>
+                <select id="styleGroupSelect"></select>
               </td>
             </tr>
           </tbody>
@@ -383,24 +384,6 @@
               <td>
                 <input id="styleOpacityInput" type="range" min=0 max=1 step=0.01 value=.4>
                 <output id="styleOpacityOutput">0.4</output>
-              </td>
-            </tr>
-          </tbody>
-
-          <tbody id="styleStates" style="display: block">
-            <tr data-tip="Set states halo effect width">
-              <td>Halo width</td>
-              <td>
-                <input id="styleStatesHaloWidth" type="range" min=0 max=30 step=.1 value=10>
-                <output id="styleStatesHaloWidthOutput">10</output>
-              </td>
-            </tr>
-
-            <tr data-tip="Set states halo effect opacity. 0: invisible, 1: solid">
-              <td>Halo opacity</td>
-              <td>
-                <input id="styleStatesHaloOpacity" type="range" min=0 max=1 step=0.01 value=1>
-                <output id="styleStatesHaloOpacityOutput">1</output>
               </td>
             </tr>
           </tbody>
@@ -550,11 +533,19 @@
               </td>
             </tr>
 
-            <tr data-tip="Set grid cells spacing (size)">
-              <td>Size</td>
+            <tr data-tip="Set grid cells scale multiplier">
+              <td>Scale</td>
               <td>
-                <input id="styleGridSize" type="number" min=2 max=50 step=.001>
-                <output id="styleGridSizeFriendly" data-tip="Distance between two adjacent cells in map scale"></output>
+                <input id="styleGridScale" type="number" min=.1 max=10 step=.01 >
+                <output id="styleGridSizeFriendly" data-tip="Distance between grid cell centers (in map scale)"></output>
+              </td>
+            </tr>
+
+            <tr data-tip="Shift the element by axes">
+              <td>Shift by axes</td>
+              <td>
+                <input id="styleGridShiftX" type="number" data-tip="Shift by x axis in pixels">
+                <input id="styleGridShiftY" type="number" data-tip="Shift by y axis in pixels">
               </td>
             </tr>
           </tbody>
@@ -588,7 +579,7 @@
           </tbody>
 
           <tbody id="styleRelief">
-              <tr data-tip="Select set of relief icons. The change will trigger icons regeneration">
+              <tr data-tip="Select set of relief icons. All relief icons will be regenerated">
                   <td>Style</td>
                   <td>
                     <select id="styleReliefSet">
@@ -599,15 +590,15 @@
                   </td>
                 </tr>
 
-            <tr data-tip="Define the size of relief icons">
+            <tr data-tip="Define the size of relief icons. All relief icons will be regenerated">
               <td>Size</td>
               <td>
-                <input id="styleReliefSizeInput" data-stored="reliefSize" type="range" min=.2 max=3 step=.01 value=1>
-                <output id="styleReliefSizeOutput">1</output>
+                <input id="styleReliefSizeInput" data-stored="reliefSize" type="range" min=.2 max=4 step=.01>
+                <output id="styleReliefSizeOutput"></output>
               </td>
             </tr>
 
-            <tr data-tip="Define the density of relief icons. Highly affects performance!">
+            <tr data-tip="Define the density of relief icons. All relief icons will be regenerated. Highly affects performance!">
               <td>Density</td>
               <td>
                 <input id="styleReliefDensityInput" data-stored="reliefDensity" type="range" min=.3 max=.8 step=.01 value=.4>
@@ -661,6 +652,15 @@
             </tr>
           </tbody>
 
+          <tbody id="styleShadow">
+            <tr data-tip="Set text shadow">
+              <td>Text shadow</td>
+              <td>
+                <input id="styleShadowInput" type="text" value="0 0 4px white"/>
+              </td>
+            </tr>
+          </tbody>
+
           <tbody id="styleFont">
             <tr data-tip="Select font">
               <td>Font</td>
@@ -676,8 +676,8 @@
             <tr data-tip="Set font size">
               <td>Font size</td>
               <td>
-                <button id="styleFontPlus" data-tip="Multiply font size by 1.1" class="whiteButton">+</button>
-                <button id="styleFontMinus" data-tip="Multiply font size by 0.9" class="whiteButton" >-</button>
+                <button id="styleFontPlus" data-tip="Increase font" class="whiteButton">+</button>
+                <button id="styleFontMinus" data-tip="Descrease font" class="whiteButton" >-</button>
                 <input id="styleFontSize" type="number" min=.5 max=100 step=.1 value=14>
               </td>
             </tr>
@@ -740,11 +740,50 @@
             </tr>
           </tbody>
 
+          <tbody id="styleStates" style="display: block">
+            <tr data-tip="Set states fill opacity. 0: invisible, 1: solid">
+              <td>Body opacity</td>
+              <td>
+                <input id="styleStatesBodyOpacity" type="range" min=0 max=1 step=0.01>
+                <output id="styleStatesBodyOpacityOutput"></output>
+              </td>
+            </tr>
+
+            <tr data-tip="Select filter for states fill. Please note filters may cause performance issues!">
+              <td>Body filter</td>
+              <td><select id="styleStatesBodyFilter"/></td>
+            </tr>
+
+            <tr data-tip="Set states halo effect width">
+              <td>Halo width</td>
+              <td>
+                <input id="styleStatesHaloWidth" type="range" min=0 max=30 step=.1 value=10>
+                <output id="styleStatesHaloWidthOutput">10</output>
+              </td>
+            </tr>
+
+            <tr data-tip="Set states halo effect opacity. 0: invisible, 1: solid">
+              <td>Halo opacity</td>
+              <td>
+                <input id="styleStatesHaloOpacity" type="range" min=0 max=1 step=0.01 value=1>
+                <output id="styleStatesHaloOpacityOutput">1</output>
+              </td>
+            </tr>
+
+            <tr data-tip="Select halo effect power (blur). Set to 0 to make it solid line">
+              <td>Halo blur</td>
+              <td>
+                <input id="styleStatesHaloBlur" type="range" min=0 max=10 step=0.01 value=4>
+                <output id="styleStatesHaloBlurOutput">4</output>
+              </td>
+            </tr>
+          </tbody>
+
           <tbody id="styleHeightmap">
             <tr data-tip="Select color scheme for the element">
               <td>Color scheme</td>
               <td>
-                <select id="styleHeightmapScheme" onchange="drawHeightmap()">
+                <select id="styleHeightmapScheme">
                   <option value="bright" selected>Bright</option>
                   <option value="light">Light</option>
                   <option value="green">Green</option>
@@ -756,14 +795,14 @@
             <tr data-tip="Terracing rate. Set to 0 (toggle off) to improve performance">
               <td>Terracing</td>
               <td>
-                <input id="styleHeightmapTerracing" type="range" min=0 max=20 step=1>
+                <input id="styleHeightmapTerracingInput" type="range" min=0 max=20 step=1>
                 <output id="styleHeightmapTerracingOutput">0</output>
               </td>
             </tr>
             <tr data-tip="Layers reduction rate. Increase to improve performance">
               <td>Reduce layers</td>
               <td>
-                <input id="styleHeightmapSkip" type="range" min=0 max=10 step=1 value=5 oninput="styleHeightmapSkipOutput.value = this.value; drawHeightmap()">
+                <input id="styleHeightmapSkipInput" type="range" min=0 max=10 step=1 value=5 >
                 <output id="styleHeightmapSkipOutput">5</output>
               </td>
             </tr>
@@ -771,7 +810,7 @@
             <tr data-tip="Line simplification rate. Increase to slightly improve performance">
               <td>Simplify line</td>
               <td>
-                <input id="styleHeightmapSimplification" type="range" min=0 max=10 step=1 value=0 oninput="styleHeightmapSimplificationOutput.value = this.value; drawHeightmap()">
+                <input id="styleHeightmapSimplificationInput" type="range" min=0 max=10 step=1 value=0 >
                 <output id="styleHeightmapSimplificationOutput">0</output>
               </td>
             </tr>
@@ -779,7 +818,7 @@
             <tr data-tip="Select line interpolation type">
               <td>Line style</td>
               <td>
-                <select id="styleHeightmapCurve" onchange="drawHeightmap()">
+                <select id="styleHeightmapCurve">
                   <option value=0 selected>Curved</option>
                   <option value=1>Linear</option>
                   <option value=2>Rectangular</option>
@@ -809,21 +848,21 @@
             <tr data-tip="Set state emblems size multiplier">
               <td>State Size</td>
               <td>
-                <input id="styleEmblemsStateSizeInput" data-stored="styleEmblemsStateSize" type="number" min=0 max=5 step=.02 value=1 />
+                <input id="emblemsStateSizeInput" data-stored="emblemsStateSize" type="number" min=0 max=5 step=.02 value=1 />
               </td>
             </tr>
 
             <tr data-tip="Set province emblems size multiplier">
               <td>Province Size</td>
               <td>
-                <input id="styleEmblemsProvinceSizeInput" data-stored="styleEmblemsProvinceSize" type="number" min=0 max=5 step=.02 value=1 />
+                <input id="emblemsProvinceSizeInput" data-stored="emblemsProvinceSize" type="number" min=0 max=5 step=.02 value=1 />
               </td>
             </tr>
 
             <tr data-tip="Set burg emblems size multiplier">
               <td>Burg Size</td>
               <td>
-                <input id="styleEmblemsBurgSizeInput" data-stored="styleEmblemsBurgSize" type="number" min=0 max=5 step=.02 value=1 />
+                <input id="emblemsBurgSizeInput" data-stored="emblemsBurgSize" type="number" min=0 max=5 step=.02 value=1 />
               </td>
             </tr>
 
@@ -838,29 +877,7 @@
           <tbody id="styleFilter" style="display: block">
             <tr data-tip="Select filter for element. Please note filters may cause performance issues!">
               <td>Filter</td>
-              <td>
-                <select id="styleFilterInput">
-                  <option value="" selected>None</option>
-                  <option value="url(#blurFilter)">Blur 0.2</option>
-                  <option value="url(#blur1)">Blur 1</option>
-                  <option value="url(#blur3)">Blur 3</option>
-                  <option value="url(#blur5)">Blur 5</option>
-                  <option value="url(#blur7)">Blur 7</option>
-                  <option value="url(#blur10)">Blur 10</option>
-                  <option value="url(#splotch)">Splotch</option>
-                  <option value="url(#bluredSplotch)">Blurred Splotch</option>
-                  <option value="url(#dropShadow01)">Shadow 0.1</option>
-                  <option value="url(#dropShadow05)">Shadow 0.5</option>
-                  <option value="url(#dropShadow)">Shadow 2</option>
-                  <option value="url(#outline)">Outline</option>
-                  <option value="url(#pencil)">Pencil</option>
-                  <option value="url(#turbulence)">Turbulence</option>
-                  <option value="url(#paper)">Paper</option>
-                  <option value="url(#crumpled)">Crumpled</option>
-                  <option value="url(#filter-grayscale)">Grayscale</option>
-                  <option value="url(#filter-sepia)">Sepia</option>
-                </select>
-              </td>
+              <td><select id="styleFilterInput"/></td>
             </tr>
           </tbody>
 
@@ -891,6 +908,13 @@
               <td colspan=2>
                 <input id="hideLabels" class="checkbox" type="checkbox" onchange="invokeActiveZooming()" checked>
                 <label for="hideLabels" class="checkbox-label">Toggle visibility automatically</label>
+              </td>
+            </tr>
+
+            <tr data-tip="Allow system to rescale labels on zoom">
+              <td colspan=2>
+                <input id="rescaleLabels" class="checkbox" type="checkbox" onchange="invokeActiveZooming()" checked>
+                <label for="rescaleLabels" class="checkbox-label">Rescale on zoom</label>
               </td>
             </tr>
           </tbody>
@@ -945,7 +969,7 @@
               <input id="pointsInput" type="range" min=1 max=13 value=4 data-cells=10000 >
             </td>
             <td>
-              <output id="pointsOutput" style="color: #053305">10K</output>
+              <output id="pointsOutput_formatted" style="color: #053305">10K</output>
             </td>
           </tr>
 
@@ -983,17 +1007,18 @@
             <td>Map template</td>
             <td>
               <select id="templateInput" data-stored="template">
-                <option value="Volcano">Volcano</option>
-                <option value="High Island">High Island</option>
-                <option value="Low Island">Low Island</option>
-                <option value="Continents">Two Continents</option>
-                <option value="Archipelago">Archipelago</option>
-                <option value="Atoll">Atoll</option>
-                <option value="Mediterranean">Mediterranean</option>
-                <option value="Peninsula">Peninsula</option>
-                <option value="Pangea">Pangea</option>
-                <option value="Isthmus">Isthmus</option>
-                <option value="Shattered">Shattered</option>
+                <option value="volcano">Volcano</option>
+                <option value="highIsland">High Island</option>
+                <option value="lowIsland">Low Island</option>
+                <option value="continents">Two Continents</option>
+                <option value="archipelago">Archipelago</option>
+                <option value="atoll">Atoll</option>
+                <option value="mediterranean">Mediterranean</option>
+                <option value="peninsula">Peninsula</option>
+                <option value="pangea">Pangea</option>
+                <option value="isthmus">Isthmus</option>
+                <option value="shattered">Shattered</option>
+                <option value="taklamakan">Taklamakan</option>
               </select>
             </td>
             <td></td>
@@ -1143,7 +1168,7 @@
               <input id="tooltipSizeInput" data-stored="tooltipSize" type="range" min=4 max=32 value=14>
             </td>
             <td>
-              <input id="tooltipSizeOutput" data-stored="tooltipSize" type="number" min=4 max=32 value=14>
+              <input id="tooltipSizeOutput" data-stored="tooltipSize" type="number" min=0 max=256 value=14>
             </td>
           </tr>
 
@@ -1261,6 +1286,18 @@
             </td>
           </tr>
 
+          <tr data-tip="Select shape rendering model">
+            <td></td>
+            <td>Shape rendering</td>
+            <td>
+              <select id="shapeRendering" data-stored="shapeRendering">
+                <option value="geometricPrecision" selected>Best quality</option>
+                <option value="optimizeSpeed">Best performace</option>
+              </select>
+            </td>
+            <td></td>
+          </tr>
+
           <!-- <tr data-tip="Select language (not all languages are fully supported). Reload the page to apply">
             <td></td>
             <td>Language</td>
@@ -1325,7 +1362,7 @@
 
         <div id="addFeature">
           <p>Click to add:</p>
-          <button id="addBurgTool" data-tip="Click on map to place a burg. Hold Shift to add multiple. Shortcut: Shift + 1">Burg</button>
+          <button id="addBurgTool" data-tip="Click on map to place a burg. Hold <kbd>Shift</kbd> to add multiple. Shortcut: Shift + 1">Burg</button>
           <button id="addLabel" data-tip="Click on map to place label. Hold Shift to add multiple. Shortcut: Shift + 2">Label</button>
           <button id="addRiver" data-tip="Click on map to place a river. Hold Shift to add multiple. Shortcut: Shift + 3">River</button>
           <button id="addRoute" data-tip="Click on map to place a route. Shortcut: Shift + 4">Route</button>
@@ -1350,9 +1387,20 @@
             <input id="renderOcean" class="checkbox" type="checkbox">
             <label for="renderOcean" class="checkbox-label">Render ocean cells</label>
           </div>
-          <div id="changeHeightsBox" data-tip="Regenerate rivers and allow water flow to slightly change heights">
-            <input id="changeHeights" class="checkbox" type="checkbox" checked>
-            <label for="changeHeights" class="checkbox-label">Allow water erosion</label>
+          <div id="allowErosionBox" data-tip="Regenerate rivers and allow water flow to change heights and form new lakes. Better to keep checked">
+            <input id="allowErosion" class="checkbox" type="checkbox" checked>
+            <label for="allowErosion" class="checkbox-label">Allow water erosion</label>
+          </div>
+          <div data-tip="Maximum number of iterations taken to resolve depressions. Increase if you have rivers ending nowhere">
+            Depressions filling max iterations:
+            <input id="resolveDepressionsStepsInput" data-stored="resolveDepressionsSteps" type="range" min=0 max=500 value=250>
+            <input id="resolveDepressionsStepsOutput" data-stored="resolveDepressionsSteps" type="number" min=0 max=1000 value=250>
+          </div>
+
+          <div data-tip="Depression depth to form a new lake. Increase to reduce number of lakes added by system">
+            Depression depth threshold:
+            <input id="lakeElevationLimitInput" data-stored="lakeElevationLimit" type="range" min=0 max=80 value=20>
+            <input id="lakeElevationLimitOutput" data-stored="lakeElevationLimit" type="number" min=0 max=80 value=20>
           </div>
         </div>
 
@@ -1379,8 +1427,8 @@
             <div>
               <div style="width: .8em; display: inline-block; padding: 0 .2em; fill: white">
                 <svg viewBox="0 0 569 546">
-                  <circle cx="362.589996" cy="204.589996" data-fill="1" id="Oval" r="204.589996"></circle>
-                  <rect data-fill="2" height="545.799988" id="Rectangle" width="100" x="0" y="0"></rect>
+                  <circle cx="362.589996" cy="204.589996" data-fill="1" id="Oval" r="204.589996" />
+                  <rect data-fill="2" height="545.799988" id="Rectangle" width="100" x="0" y="0" />
                 </svg>
               </div>SUPPORT ON PATREON
             </div>
@@ -1425,7 +1473,7 @@
             <i>Equator:</i>
             <input id="temperatureEquatorInput" data-stored="temperatureEquator" type="number" min="-50" max="50">°C =
             <span id="temperatureEquatorF"></span>°F
-            <input id="temperatureEquatorOutput" data-stored="temperatureEquator" type="range" min="-30" max="30"/>
+            <input id="temperatureEquatorOutput" data-stored="temperatureEquator" type="range" min="-50" max="50"/>
           </label>
         </div>
         <div>
@@ -1434,7 +1482,7 @@
             <i>Poles:</i>
             <input id="temperaturePoleInput" data-stored="temperaturePole" type="number" min="-50" max="50">°C =
             <span id="temperaturePoleF"></span>°F
-            <input id="temperaturePoleOutput" data-stored="temperaturePole" type="range" min="-30" max="30"/>
+            <input id="temperaturePoleOutput" data-stored="temperaturePole" type="range" min="-50" max="50"/>
           </label>
         </div>
         <div>
@@ -1488,27 +1536,27 @@
           </linearGradient>
         </defs>
         <g id="globeNoteLines">
-          <line x1="5" x2="220" y1="0" y2="0"></line>
-          <line x1="5" x2="220" y1="13" y2="13"></line>
-          <line x1="5" x2="220" y1="49.5" y2="49.5"></line>
-          <line x1="-5" x2="220" y1="100" y2="100"></line>
-          <line x1="5" x2="220" y1="150.5" y2="150.5"></line>
-          <line x1="5" x2="220" y1="187" y2="187"></line>
-          <line x1="5" x2="220" y1="200" y2="200"></line>
+          <line x1="5" x2="220" y1="0" y2="0" />
+          <line x1="5" x2="220" y1="13" y2="13" />
+          <line x1="5" x2="220" y1="49.5" y2="49.5" />
+          <line x1="-5" x2="220" y1="100" y2="100" />
+          <line x1="5" x2="220" y1="150.5" y2="150.5" />
+          <line x1="5" x2="220" y1="187" y2="187" />
+          <line x1="5" x2="220" y1="200" y2="200" />
         </g>
-        <g id="globeWindArrows" data-tip="Click to change wind direction">
-          <circle cx=210 cy=6 r=12></circle>
-          <path data-tier=0 d="M210,11 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(225 210 6)"></path>
-          <circle cx=210 cy=30 r=12></circle>
-          <path data-tier=1 d="M210,35 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(45 210 30)"></path>
-          <circle cx=210 cy=75 r=12></circle>
-          <path data-tier=2 d="M210,80 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(225 210 75)"></path>
-          <circle cx=210 cy=130 r=12></circle>
-          <path data-tier=3 d="M210,135 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(315 210 130)"></path>
-          <circle cx=210 cy=173 r=12></circle>
-          <path data-tier=4 d="M210,178 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(135 210 173)"></path>
-          <circle cx=210 cy=194 r=12></circle>
-          <path data-tier=5 d="M210,199 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(315 210 194)"></path>
+        <g id="globeWindArrows" data-tip="Click to change wind direction" stroke-linejoin="round">
+          <circle cx=210 cy=6 r=12 />
+          <path data-tier=0 d="M210,11 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(225 210 6)" />
+          <circle cx=210 cy=30 r=12 />
+          <path data-tier=1 d="M210,35 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(45 210 30)" />
+          <circle cx=210 cy=75 r=12 />
+          <path data-tier=2 d="M210,80 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(225 210 75)"/>
+          <circle cx=210 cy=130 r=12 />
+          <path data-tier=3 d="M210,135 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(315 210 130)"/>
+          <circle cx=210 cy=173 r=12 />
+          <path data-tier=4 d="M210,178 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(135 210 173)"/>
+          <circle cx=210 cy=194 r=12 />
+          <path data-tier=5 d="M210,199 v-10 l-3,3 m6,0 l-3,-3" transform="rotate(315 210 194)"/>
         </g>
         <g id="globaAxisLabels">
           <text x="82%" y="-4%">wind</text>
@@ -1523,10 +1571,10 @@
           <text x="-15" y="190">60°</text>
           <text x="-15" y="204">90°</text>
         </g>
-        <circle id="globeOutline" cx="100" cy="100" r="100"></circle>
-        <line id="globeEquator" x1="1" x2="199" y1="100" y2="100"></line>
-        <path id="globeGraticule"></path>
-        <path id="globeArea"></path>
+        <circle id="globeOutline" cx="100" cy="100" r="100" />
+        <line id="globeEquator" x1="1" x2="199" y1="100" y2="100" />
+        <path id="globeGraticule" />
+        <path id="globeArea" />
       </svg>
     </div>
 
@@ -1604,23 +1652,31 @@
           <input id="riverWidth" disabled/>
         </div>
 
-        <div data-tip="River source width in pixels">
+        <div data-tip="River source additional width. Default value is 0">
           <div class="label">Source width:</div>
-          <input id="riverSourceWidth" type="number" min=0 max=3 step=.1 />
+          <input id="riverSourceWidth" type="number" min=0 max=3 step=.01 />
         </div>
 
-        <div data-tip="River width multiplier">
+        <div data-tip="River width multiplier. Default value is 1">
           <div class="label">Width modifier:</div>
           <input id="riverWidthFactor" type="number" min=.1 max=4 step=.1 />
         </div>
       </div>
 
       <div id="riverBottom">
-        <button id="riverNew" data-tip="Create new river clicking on map" class="icon-map-pin"></button>
+        <button id="riverCreateSelectingCells" data-tip="Create new river selecting river cells" class="icon-map-pin"></button>
         <button id="riverEditStyle" data-tip="Edit style for all rivers in Style Editor" class="icon-brush"></button>
         <button id="riverElevationProfile" data-tip="Show the elevation profile for the river" class="icon-chart-area"></button>
         <button id="riverLegend" data-tip="Edit free text notes (legend) for the river" class="icon-edit"></button>
         <button id="riverRemove" data-tip="Remove river. Shortcut: Delete" class="icon-trash fastDelete"></button>
+      </div>
+    </div>
+
+    <div id="riverCreator" class="dialog" style="display: none">
+      <div id="riverCreatorBody" class="table"></div>
+      <div id="riverCreatorBottom">
+        <button id="riverCreatorComplete" data-tip="Complete river creation" class="icon-check"></button>
+        <button id="riverCreatorCancel" data-tip="Cancel the creation" class="icon-cancel"></button>
       </div>
     </div>
 
@@ -1884,7 +1940,7 @@
         <button id="reliefCopy" data-tip="Copy selected relief icon" class="icon-clone"></button>
         <button id="reliefMoveFront" data-tip="Move selected relief icon to front" class="icon-level-up"></button>
         <button id="reliefMoveBack" data-tip="Move selected relief icon back" class="icon-level-down"></button>
-        <button id="reliefRemove" data-tip="Remove selected relief icon. Shortcut: Delete" class="icon-trash fastDelete"></button>
+        <button id="reliefRemove" data-tip="Remove selected relief icon or icon type. Shortcut: Delete" class="icon-trash fastDelete"></button>
       </div>
     </div>
 
@@ -2188,43 +2244,43 @@
       <div id="brushesButtons" style="display: inline-block">
         <button id="brushRaise" data-tip="Raise brush: increase height of cells in radius by Power value">
           <svg viewBox="15 15 70 70" height="1em" width="1.6em">
-            <path d="m20,39 h60 M50,85 v-35 l-12,8 m12,-8 l12,8" fill="none" stroke="#000" stroke-width="5"></path>
+            <path d="m20,39 h60 M50,85 v-35 l-12,8 m12,-8 l12,8" fill="none" stroke="#000" stroke-width="5" />
           </svg>
         </button>
 
         <button id="brushElevate" data-tip="Elevate brush: drag to gradually increase height of cells in radius by Power value">
           <svg viewBox="15 15 70 70" height="1em" width="1.6em">
-            <path d="m20,50 q30,-35 60,0 M50,85 v-35 l-12,8 m12,-8 l12,8" fill="none" stroke="#000" stroke-width="5"></path>
+            <path d="m20,50 q30,-35 60,0 M50,85 v-35 l-12,8 m12,-8 l12,8" fill="none" stroke="#000" stroke-width="5" />
           </svg>
         </button>
 
         <button id="brushLower" data-tip="Lower brush: drag to decrease height of cells in radius by Power value">
           <svg viewBox="15 15 70 70" height="1em" width="1.6em">
-            <path d="M50,30 v35 l-12,-8 m12,8 l12,-8 M20,78 h60" fill="none" stroke="#000" stroke-width="5"></path>
+            <path d="M50,30 v35 l-12,-8 m12,8 l12,-8 M20,78 h60" fill="none" stroke="#000" stroke-width="5" />
           </svg>
         </button>
 
         <button id="brushDepress" data-tip="Depress brush: drag to gradually decrease height of cells in radius by Power value">
           <svg viewBox="15 15 70 70" height="1em" width="1.6em">
-            <path d="M50,30 v35 l-12,-8 m12,8 l12,-8 M20,63 q30,35 60,0" fill="none" stroke="#000" stroke-width="5"></path>
+            <path d="M50,30 v35 l-12,-8 m12,8 l12,-8 M20,63 q30,35 60,0" fill="none" stroke="#000" stroke-width="5" />
           </svg>
         </button>
 
         <button id="brushAlign" data-tip="Align brush: drag to set height of cells in radius to height of the cell at mousepoint">
           <svg viewBox="15 15 70 70" height="1em" width="1.6em">
-            <path d="m20,50 h56 m0,20 h-56" fill="none" stroke="#000" stroke-width="5"></path>
+            <path d="m20,50 h56 m0,20 h-56" fill="none" stroke="#000" stroke-width="5" />
           </svg>
         </button>
 
         <button id="brushSmooth" data-tip="Smooth brush: drag to level height of cells in radius to height of adjacent cells">
           <svg viewBox="15 15 70 70" height="1em" width="1.6em">
-            <path d="m15,60 q15,-15 30,0 q15,15 35,0" fill="none" stroke="#000" stroke-width="5"></path>
+            <path d="m15,60 q15,-15 30,0 q15,15 35,0" fill="none" stroke="#000" stroke-width="5" />
           </svg>
         </button>
 
         <button id="brushDisrupt" data-tip="Disrupt brush: drag to randomize height of cells in radius based on Power value">
           <svg viewBox="15 15 70 70" height="1em" width="1.6em">
-            <path d="m15,63 l15,-13 15,20 15,-20 15,19 15,-14" fill="none" stroke="#000" stroke-width="5"></path>
+            <path d="m15,63 l15,-13 15,20 15,-20 15,19 15,-14" fill="none" stroke="#000" stroke-width="5" />
           </svg>
         </button>
       </div>
@@ -2284,18 +2340,19 @@
     <div id="templateEditor" class="dialog stable" style="display: none">
       <div id="templateTop">
         <i>Select template: </i><select id="templateSelect" style="width:16em" data-prev="templateCustom" data-tip="Select base template">
-          <option value="templateCustom" selected>Custom</option>
-          <option value="templateVolcano">Volcano</option>
-          <option value="templateHighIsland">High Island</option>
-          <option value="templateLowIsland">Low Island</option>
-          <option value="templateContinents">Two Continents</option>
-          <option value="templateArchipelago">Archipelago</option>
-          <option value="templateAtoll">Atoll</option>
-          <option value="templateMediterranean">Mediterranean</option>
-          <option value="templatePeninsula">Peninsula</option>
-          <option value="templatePangea">Pangea</option>
-          <option value="templateIsthmus">Isthmus</option>
-          <option value="templateShattered">Shattered</option>
+          <option value="custom" selected>Custom</option>
+          <option value="volcano">Volcano</option>
+          <option value="highIsland">High Island</option>
+          <option value="lowIsland">Low Island</option>
+          <option value="continents">Two Continents</option>
+          <option value="archipelago">Archipelago</option>
+          <option value="atoll">Atoll</option>
+          <option value="mediterranean">Mediterranean</option>
+          <option value="peninsula">Peninsula</option>
+          <option value="pangea">Pangea</option>
+          <option value="isthmus">Isthmus</option>
+          <option value="shattered">Shattered</option>
+          <option value="taklamakan">Taklamakan</option>
         </select>
       </div>
       <div id="templateTools">
@@ -2314,8 +2371,8 @@
           <div style="width:4em">Hill</div>
           <i class="icon-trash-empty pointer" data-tip="Remove the step"></i>
           <i class="icon-resize-vertical" data-tip="Drag to reorder"></i>
-          <span>y:<input class="templateY" data-tip="Placement range percentage along Y axis (minY-maxY)" value="47-53"></span>
-          <span>x:<input class="templateX" data-tip="Placement range percentage along X axis (minX-maxX)" value="65-75"></span>
+          <span>y:<input class="templateY" data-tip="Y axis position in percentage (minY-maxY or Y)" value="47-53"></span>
+          <span>x:<input class="templateX" data-tip="X axis position in percentage (minX-maxX or X)" value="65-75"></span>
           <span>h:<input class="templateHeight" data-tip="Blob maximum height, use hyphen to get a random number in range" value="90-100"></span>
           <span>n:<input class="templateCount" data-tip="Blobs to add, use hyphen to get a random number in range" value="1"></span>
         </div>
@@ -2488,6 +2545,7 @@
           <optgroup label="Monarchy">
             <option value="Beylik">Beylik</option>
             <option value="Despotate">Despotate</option>
+            <option value="Dominion">Dominion</option>
             <option value="Duchy">Duchy</option>
             <option value="Emirate">Emirate</option>
             <option value="Empire">Empire</option>
@@ -2510,6 +2568,7 @@
             <option value="Diarchy">Diarchy</option>
             <option value="Federation">Federation</option>
             <option value="Free City">Free City</option>
+            <option value="Most Serene Republic">Most Serene Republic</option>
             <option value="Oligarchy">Oligarchy</option>
             <option value="Protectorate">Protectorate</option>
             <option value="Republic">Republic</option>
@@ -2532,10 +2591,17 @@
             <option value="Tribes">United Tribes</option>
           </optgroup>
           <optgroup label="Theocracy">
+            <option value="Bishopric">Bishopric</option>
             <option value="Brotherhood">Brotherhood</option>
             <option value="Caliphate">Caliphate</option>
             <option value="Diocese">Diocese</option>
+            <option value="Divine Duchy">Divine Duchy</option>
+            <option value="Divine Grand Duchy">Divine Grand Duchy</option>
+            <option value="Divine Principality">Divine Principality</option>
+            <option value="Divine Kingdom">Divine Kingdom</option>
+            <option value="Divine Empire">Divine Empire</option>
             <option value="Eparchy">Eparchy</option>
+            <option value="Holy State">Holy State</option>
             <option value="Imamah">Imamah</option>
             <option value="Theocracy">Theocracy</option>
           </optgroup>
@@ -2652,27 +2718,37 @@
         <div data-tip="Province form name" class="label">Form name:</div>
         <select id="provinceNameEditorSelectForm" style="display: inline-block; width: 11em; height: 1.645em">
           <option value="">blank</option>
+          <option value="Area">Area</option>
+          <option value="Autonomy">Autonomy</option>
           <option value="Barony">Barony</option>
           <option value="Canton">Canton</option>
+          <option value="Clan">Clan</option>
+          <option value="Colony">Colony</option>
           <option value="Council">Council</option>
           <option value="County">County</option>
           <option value="Deanery">Deanery</option>
           <option value="Department">Department</option>
+          <option value="Dependency">Dependency</option>
           <option value="District">District</option>
           <option value="Earldom">Earldom</option>
           <option value="Governorate">Governorate</option>
+          <option value="Island">Island</option>
+          <option value="Islands">Islands</option>
           <option value="Land">Land</option>
           <option value="Landgrave">Landgrave</option>
+          <option value="Mandate">Mandate</option>
           <option value="Margrave">Margrave</option>
+          <option value="Occupation zone">Occupation zone</option>
           <option value="Parish">Parish</option>
           <option value="Prefecture">Prefecture</option>
           <option value="Province">Province</option>
           <option value="Region">Region</option>
           <option value="Republic">Republic</option>
-          <option value="reservation">Reservation</option>
+          <option value="Reservation">Reservation</option>
           <option value="Shire">Shire</option>
           <option value="State">State</option>
           <option value="Territory">Territory</option>
+          <option value="Tribe">Tribe</option>
         </select>
         <input id="provinceNameEditorCustomForm" placeholder="type form name" data-tip="Create custom province form name" style="display: none; width: 11em;">
         <span id="provinceNameEditorAddForm" data-tip="Click to add custom province form name to the list" class="icon-plus pointer"></span>
@@ -2823,6 +2899,7 @@
         <button id="notesPin" data-tip="Toggle notes box dispay: hide or do not hide the box on mouse move" class="icon-pin"></button>
         <button id="notesDownload" data-tip="Download notes to PC" class="icon-download"></button>
         <button id="notesUpload" data-tip="Upload notes from PC" class="icon-upload"></button>
+        <button id="notesClearStyle" data-tip="Remove all styling, get plain text only" class="icon-eraser"></button>
         <button id="notesRemove" data-tip="Remove this note" class="icon-trash fastDelete"></button>
       </div>
     </div>
@@ -3059,8 +3136,8 @@
 
         <div data-tip="Set scale bar size">
           <div>Bar size:</div>
-          <input id="barSizeOutput" type="range" min=.5 max=5 value=2 step=.1>
-          <input id="barSize" data-stored="barSize" type="number" min=.5 max=5 value=2 step=.1>
+          <input id="barSizeOutput" data-stored="barSize" type="range" min=.5 max=5 value=2 step=.1>
+          <input id="barSizeInput" data-stored="barSize" type="number" min=.5 max=5 value=2 step=.1>
         </div>
 
         <div data-tip="Type scale bar label, leave blank to hide label">
@@ -3087,14 +3164,14 @@
 
         <div data-tip="Set how many people are in one population point">
           <div>1 population point =</div>
-          <input id="populationRateOutput" type="range" min=10 max=9990 step=10 value=1000 style="width:6em">
-          <input id="populationRate" data-stored="populationRate" type="number" min=10 max=9990 step=10 value=1000 data-value=1000 style="width:4.5em">
+          <input id="populationRateOutput" data-stored="populationRate" type="range" min=10 max=9990 step=10 value=1000 style="width:6em">
+          <input id="populationRateInput" data-stored="populationRate" type="number" min=10 max=9990 step=10 value=1000 style="width:4.5em">
         </div>
 
         <div data-tip="Set urbanization rate: burgs population relative to all population">
           <div>Urbanization rate:</div>
-          <input id="urbanizationOutput" type="range" min=.01 max=5 step=.01 value=1>
-          <input id="urbanization" data-stored="urbanization" type="number" min=.01 max=5 step=.01 value=1 data-value=1>
+          <input id="urbanizationOutput" data-stored="urbanization" type="range" min=.01 max=5 step=.01 value=1 >
+          <input id="urbanizationInput" data-stored="urbanization" type="number" min=.01 max=5 step=.01 value=1 >
         </div>
       </div>
 
@@ -3122,7 +3199,7 @@
         <div style="left:31.2em" data-tip="Click to sort by burg type" class="sortable alphabetically" data-sortby="type">Type&nbsp;</div>
       </div>
 
-      <div id="burgsBody" class="burgs-table"></div>
+      <div id="burgsBody" class="table"></div>
 
       <div id="burgsFilters" data-tip="Apply a filter">
         <span>State: </span>
@@ -3157,7 +3234,7 @@
         <div style="left:30em" data-tip="Click to sort by river basin" class="sortable alphabetically" data-sortby="basin">Basin&nbsp;</div>
       </div>
 
-      <div id="riversBody" class="burgs-table"></div>
+      <div id="riversBody" class="table"></div>
 
       <div id="riversFooter" class="totalLine">
         <div data-tip="Rivers number" style="margin-left: 4px">Rivers:&nbsp;<span id="riversFooterNumber">0</span></div>
@@ -3168,7 +3245,8 @@
 
       <div id="riversBottom">
         <button id="riversOverviewRefresh" data-tip="Refresh the Editor" class="icon-cw"></button>
-        <button id="addNewRiver" data-tip="Add a new river. Hold Shift to add multiple" class="icon-plus"></button>
+        <button id="addNewRiver" data-tip="Automatically add river starting from clicked cell. Hold Shift to add multiple" class="icon-plus"></button>
+        <button id="riverCreateNew" data-tip="Create new river selecting river cells" class="icon-map-pin"></button>
         <button id="riversBasinHighlight" data-tip="Toggle basin highlight mode" class="icon-sitemap"></button>
         <button id="riversExport" data-tip="Save rivers-related data as a text file (.csv)" class="icon-download"></button>
         <button id="riversRemoveAll" data-tip="Remove all rivers" class="icon-trash"></button>
@@ -3325,6 +3403,11 @@
           <input id="options3dSunZ" type="number" min=-1500 max=1500 step=100 style="width:4.7em">
         </div>
 
+        <div data-tip="Toggle 3d labels" style="margin: .6em 0 .3em -.2em">
+          <input id="options3dMeshLabels3d" class="checkbox" type="checkbox">
+          <label for="options3dMeshLabels3d" class="checkbox-label"><i>Show 3D labels</i></label>
+        </div>
+
         <div data-tip="Toggle sky mode" style="margin: .6em 0 .3em -.2em">
           <input id="options3dMeshSkyMode" class="checkbox" type="checkbox">
           <label for="options3dMeshSkyMode" class="checkbox-label"><i>Show sky and extend water</i></label>
@@ -3373,6 +3456,7 @@
         <button onclick="saveSVG()" data-tip="Download the map as vector image (open in browser or Inkscape)">.svg</button>
         <button onclick="savePNG()" data-tip="Download visible part of the map as .png (lossless compressed)">.png</button>
         <button onclick="saveJPEG()" data-tip="Download visible part of the map as .jpeg (lossy compressed) image">.jpeg</button>
+        <button onclick="openSaveTiles()" data-tip="Split map into smaller png tiles and download as zip archive">tiles</button>
         <button onclick="saveGeoJSON()" data-tip="Download map data in GeoJSON format">.json</button>
         <button onclick="quickSave()" data-tip="Save the project to browser storage (unreliable). Shortcut: F6">storage</button>
       </div>
@@ -3380,8 +3464,12 @@
       <p style="font-style: italic">Generator uses pop-up window to download files. Please ensure your browser does not block popups.</p>
       <div data-tip="Define scale of a saved png/jpeg image (e.g. 5x). Saving big images is slow and may cause a browser crash!" style="margin-bottom: .3em">
         PNG / JPEG scale:
-        <input id="pngResolutionInput" data-stored="pngResolution" type="range" min=1 max=8 value=1 style="width: 10.8em" oninput="pngResolutionOutput.value = this.value">
-        <input id="pngResolutionOutput" data-stored="pngResolution" type="number" min=1 max=8 value=1 oninput="pngResolutionInput.value = this.value">
+        <input id="pngResolutionInput" data-stored="pngResolution" type="range" min=1 max=8 value=1 style="width: 14em">
+        <input id="pngResolutionOutput" data-stored="pngResolution" type="number" min=1 max=8 value=1>
+      </div>
+      <div data-tip="Check to not allow system to automatically hide labels">
+        <input id="showLabels" class="checkbox" type="checkbox" onchange="hideLabels.checked = !this.checked; invokeActiveZooming()" checked="">
+        <label for="showLabels" class="checkbox-label">Show all labels</label>
       </div>
     </div>
 
@@ -3392,6 +3480,31 @@
         <button onclick="loadURL()" data-tip="Load .map file from URL (server should allow CORS)">URL</button>
         <button onclick="quickLoad()" data-tip="Load map from browser storage (if saved before)">storage</button>
       </div>
+    </div>
+
+    <div id="saveTilesScreen" style="display: none" class="dialog">
+      <p style="font-style: italic">Map will be split into tiles and downloaded as a single zip file. Avoid saving to big images</p>
+      <div data-tip="Number of columns" style="margin-bottom: .3em">
+        <div class="label">Columns:</div>
+        <input id="tileColsInput" data-stored="tileCols" type="range" min=2 max=20 value=8 style="width: 11em">
+        <input id="tileColsOutput" data-stored="tileCols" type="number" min=2 value=8 >
+      </div>
+      <div data-tip="Number of rows" style="margin-bottom: .3em">
+        <div class="label">Rows:</div>
+        <input id="tileRowsInput" data-stored="tileRows" type="range" min=2 max=20 value=8 style="width: 11em">
+        <input id="tileRowsOutput" data-stored="tileRows" type="number" min=2 value=8 >
+      </div>
+      <div data-tip="Image scale relative to image size (e.g. 5x)" style="margin-bottom: .3em">
+        <div class="label">Scale:</div>
+        <input id="tileScaleInput" data-stored="tileScale" type="range" min=1 max=4 value=1 style="width: 11em">
+        <input id="tileScaleOutput" data-stored="tileScale" type="number" min=1 value=1 
+        >
+      </div>
+      <div data-tip="Calculated size of image if combined" style="margin-bottom: .3em">
+        <div class="label">Total size:</div>
+        <div id="tileSize" style="display: inline-block">1000 x 1000 px</div>
+      </div>
+      <div id="tileStatus" style="background-color: #33333310; font-style: italic"></div>
     </div>
 
     <div id="alert" style="display: none" class="dialog">
@@ -3434,61 +3547,64 @@
   <svg id="defElements" width="0" height="0" style="position: absolute">
     <defs>
       <marker id="end-arrow" viewBox="0 -5 10 10" refX="6" markerWidth="7" markerHeight="7" orient="auto">
-        <path d="M0,-5L10,0L0,5" fill="#000"></path>
+        <path d="M0,-5L10,0L0,5" fill="#000" />
+      </marker>
+      <marker id="end-arrow-small" viewBox="0 -5 10 10" refX="6" markerWidth="2" markerHeight="2" orient="auto">
+        <path d="M0,-5L10,0L0,5" fill="#555" />
       </marker>
 
       <symbol id="icon-store" viewBox="0 0 616 512">
-        <path d="M602 118.6L537.1 15C531.3 5.7 521 0 510 0H106C95 0 84.7 5.7 78.9 15L14 118.6c-33.5 53.5-3.8 127.9 58.8 136.4 4.5.6 9.1.9 13.7.9 29.6 0 55.8-13 73.8-33.1 18 20.1 44.3 33.1 73.8 33.1 29.6 0 55.8-13 73.8-33.1 18 20.1 44.3 33.1 73.8 33.1 29.6 0 55.8-13 73.8-33.1 18.1 20.1 44.3 33.1 73.8 33.1 4.7 0 9.2-.3 13.7-.9 62.8-8.4 92.6-82.8 59-136.4zM529.5 288c-10 0-19.9-1.5-29.5-3.8V384H116v-99.8c-9.6 2.2-19.5 3.8-29.5 3.8-6 0-12.1-.4-18-1.2-5.6-.8-11.1-2.1-16.4-3.6V480c0 17.7 14.3 32 32 32h448c17.7 0 32-14.3 32-32V283.2c-5.4 1.6-10.8 2.9-16.4 3.6-6.1.8-12.1 1.2-18.2 1.2z"></path>
+        <path d="M602 118.6L537.1 15C531.3 5.7 521 0 510 0H106C95 0 84.7 5.7 78.9 15L14 118.6c-33.5 53.5-3.8 127.9 58.8 136.4 4.5.6 9.1.9 13.7.9 29.6 0 55.8-13 73.8-33.1 18 20.1 44.3 33.1 73.8 33.1 29.6 0 55.8-13 73.8-33.1 18 20.1 44.3 33.1 73.8 33.1 29.6 0 55.8-13 73.8-33.1 18.1 20.1 44.3 33.1 73.8 33.1 4.7 0 9.2-.3 13.7-.9 62.8-8.4 92.6-82.8 59-136.4zM529.5 288c-10 0-19.9-1.5-29.5-3.8V384H116v-99.8c-9.6 2.2-19.5 3.8-29.5 3.8-6 0-12.1-.4-18-1.2-5.6-.8-11.1-2.1-16.4-3.6V480c0 17.7 14.3 32 32 32h448c17.7 0 32-14.3 32-32V283.2c-5.4 1.6-10.8 2.9-16.4 3.6-6.1.8-12.1 1.2-18.2 1.2z" />
       </symbol>
 
       <symbol id="icon-anchor" viewBox="0 0 30 28">
         <title>Port</title>
-        <path d="M15 4c0-0.547-0.453-1-1-1s-1 0.453-1 1 0.453 1 1 1 1-0.453 1-1zM28 18.5v5.5c0 0.203-0.125 0.391-0.313 0.469-0.063 0.016-0.125 0.031-0.187 0.031-0.125 0-0.25-0.047-0.359-0.141l-1.453-1.453c-2.453 2.953-6.859 4.844-11.688 4.844s-9.234-1.891-11.688-4.844l-1.453 1.453c-0.094 0.094-0.234 0.141-0.359 0.141-0.063 0-0.125-0.016-0.187-0.031-0.187-0.078-0.313-0.266-0.313-0.469v-5.5c0-0.281 0.219-0.5 0.5-0.5h5.5c0.203 0 0.391 0.125 0.469 0.313s0.031 0.391-0.109 0.547l-1.563 1.563c1.406 1.891 4.109 3.266 7.203 3.687v-10.109h-3c-0.547 0-1-0.453-1-1v-2c0-0.547 0.453-1 1-1h3v-2.547c-1.188-0.688-2-1.969-2-3.453 0-2.203 1.797-4 4-4s4 1.797 4 4c0 1.484-0.812 2.766-2 3.453v2.547h3c0.547 0 1 0.453 1 1v2c0 0.547-0.453 1-1 1h-3v10.109c3.094-0.422 5.797-1.797 7.203-3.687l-1.563-1.563c-0.141-0.156-0.187-0.359-0.109-0.547s0.266-0.313 0.469-0.313h5.5c0.281 0 0.5 0.219 0.5 0.5z"></path>
+        <path d="M15 4c0-0.547-0.453-1-1-1s-1 0.453-1 1 0.453 1 1 1 1-0.453 1-1zM28 18.5v5.5c0 0.203-0.125 0.391-0.313 0.469-0.063 0.016-0.125 0.031-0.187 0.031-0.125 0-0.25-0.047-0.359-0.141l-1.453-1.453c-2.453 2.953-6.859 4.844-11.688 4.844s-9.234-1.891-11.688-4.844l-1.453 1.453c-0.094 0.094-0.234 0.141-0.359 0.141-0.063 0-0.125-0.016-0.187-0.031-0.187-0.078-0.313-0.266-0.313-0.469v-5.5c0-0.281 0.219-0.5 0.5-0.5h5.5c0.203 0 0.391 0.125 0.469 0.313s0.031 0.391-0.109 0.547l-1.563 1.563c1.406 1.891 4.109 3.266 7.203 3.687v-10.109h-3c-0.547 0-1-0.453-1-1v-2c0-0.547 0.453-1 1-1h3v-2.547c-1.188-0.688-2-1.969-2-3.453 0-2.203 1.797-4 4-4s4 1.797 4 4c0 1.484-0.812 2.766-2 3.453v2.547h3c0.547 0 1 0.453 1 1v2c0 0.547-0.453 1-1 1h-3v10.109c3.094-0.422 5.797-1.797 7.203-3.687l-1.563-1.563c-0.141-0.156-0.187-0.359-0.109-0.547s0.266-0.313 0.469-0.313h5.5c0.281 0 0.5 0.219 0.5 0.5z" />
       </symbol>
 
       <symbol id="icon-route" viewBox="0 0 512 512">
-        <path d="M416 320h-96c-17.6 0-32-14.4-32-32s14.4-32 32-32h96s96-107 96-160-43-96-96-96-96 43-96 96c0 25.5 22.2 63.4 45.3 96H320c-52.9 0-96 43.1-96 96s43.1 96 96 96h96c17.6 0 32 14.4 32 32s-14.4 32-32 32H185.5c-16 24.8-33.8 47.7-47.3 64H416c52.9 0 96-43.1 96-96s-43.1-96-96-96zm0-256c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zM96 256c-53 0-96 43-96 96s96 160 96 160 96-107 96-160-43-96-96-96zm0 128c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"></path>
+        <path d="M416 320h-96c-17.6 0-32-14.4-32-32s14.4-32 32-32h96s96-107 96-160-43-96-96-96-96 43-96 96c0 25.5 22.2 63.4 45.3 96H320c-52.9 0-96 43.1-96 96s43.1 96 96 96h96c17.6 0 32 14.4 32 32s-14.4 32-32 32H185.5c-16 24.8-33.8 47.7-47.3 64H416c52.9 0 96-43.1 96-96s-43.1-96-96-96zm0-256c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zM96 256c-53 0-96 43-96 96s96 160 96 160 96-107 96-160-43-96-96-96zm0 128c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z" />
       </symbol>
 
       <g id="defs-relief">
         <symbol id="relief-mount-1" viewBox="0 0 100 100">
-          <path d="m3,69 16,-12 31,-32 15,20 30,24" fill="#fff" stroke="#5c5c70" stroke-width="1"></path>
-          <path d="m3,69 16,-12 31,-32 -14,44" fill="#999999"></path>
-          <path d="m3,71 h92 m-83,3 h83" stroke="#5c5c70" stroke-dasharray="7, 11" stroke-width="1"></path>
+          <path d="m3,69 16,-12 31,-32 15,20 30,24" fill="#fff" stroke="#5c5c70" stroke-width="1" />
+          <path d="m3,69 16,-12 31,-32 -14,44" fill="#999999" />
+          <path d="m3,71 h92 m-83,3 h83" stroke="#5c5c70" stroke-dasharray="7, 11" stroke-width="1" />
         </symbol>
         <symbol id="relief-hill-1" viewBox="0 0 100 100">
-          <path d="m20,55 q30,-28 60,0" fill="#999999" stroke="#5c5c70"></path>
-          <path d="m38,55 q13,-24 40,0" fill="#fff"></path>
-          <path d="m20,58 h70 m-62,3 h50" stroke="#5c5c70" stroke-dasharray="7, 11" stroke-width="1"></path>
+          <path d="m20,55 q30,-28 60,0" fill="#999999" stroke="#5c5c70" />
+          <path d="m38,55 q13,-24 40,0" fill="#fff" />
+          <path d="m20,58 h70 m-62,3 h50" stroke="#5c5c70" stroke-dasharray="7, 11" stroke-width="1" />
         </symbol>
         <symbol id="relief-deciduous-1" viewBox="0 0 100 100">
-          <path d="m50,52 v7 h1 v-7 h-0.5 q13,-7 0,-16 q-13,9 0,16" fill="#fff" stroke="#5c5c70"></path>
-          <path d="m50,52 q-12,-7 0,-16 q-3.5,10 0,15.5" fill="#999999"></path>
+          <path d="m49.5,52 v7 h1 v-7 h-0.5 q13,-7 0,-16 q-13,9 0,16" fill="#fff" stroke="#5c5c70" />
+          <path d="M 50,51.5 C 44,49 40,43 50,36.5" fill="#999999" />
         </symbol>
         <symbol id="relief-conifer-1" viewBox="0 0 100 100">
-          <path d="m50,55 v4 h1 v-4 l4.5,0 -4,-8 l3.5,0 -4.5,-9 -4,9 3,0 -3.5,8 7,0" fill="#fff" stroke="#5c5c70"></path>
-          <path d="m46,55 l4,-8 -4,0 5,-9 -2.5,9 l1.5,0 -2,8" fill="#999999"></path>
+          <path d="m49.5,55 v4 h1 v-4 l4.5,0 -4,-8 l3.5,0 -4.5,-9 -4,9 3,0 -3.5,8 7,0" fill="#fff" stroke="#5c5c70" />
+          <path d="m 46,54.5 3.5,-8 H 46.6 L 50,39 v 15.5 z" fill="#999999" />
         </symbol>
         <symbol id="relief-acacia-1" viewBox="0 0 100 100">
-          <path d="m34.5 44.5 c 1.8, -3 8.1, -5.7 12.6, -5.4 6, -2.2 9.3, -0.9 11.9, 1.3 1.7, 0.2 3.2,-0.3 5.2, 2.2 2.7, 1.2 3.7, 2.4 2.7, 3.7 -1.6, 0.3 -2.2, 0 -4.7, -1.6 -5.2, 0.1 -7, 0.7 -8.7, -0.9 -2.8, 1 -3.6, 0 -9.7, 0.2 -4.6, 0 -8, 1.6 -9.3, 0.4 z" fill="#fff"></path>
-          <path d="m52 38 c-2.3 -0.1 -4.3 1.1 -4.9 1.1 -2.2 -0.2 -5 0.2 -6.4 1 -1.3 0.7 -2.8 1.6 -3.7 2.1 -1 0.6 -3.4 1.8 -2.2 2.7 1.1 0.9 3.1 -0.2 4.2 0.3 1.4 0.8 2.9 1 4.5 0.9 1.1 -0.1 2.2 -0.4 2.4 1 0.3 1.9 1.1 3.5 2.1 5.1 0.8 2.4 1 2.8 1 6.8 l2 0 c 0 -1.1 -0.1 -4 1.2 -5.7 1.1 -1.4 1.4 -3.4 3 -4.4 0.9 -1.4 2 -2.6 3.8 -2.7 1.7 -0.3 3.8 0.8 5.1 0.3 0.9 -0.1 3.2 1 3.5 -1 0.1 -2 -2.2 -2.1 -3.2 -3.3 -1.1 -1.5 -3.3 -1.9 -4.9 -1.8 -1 -0.5 -2 -2.5 -7.3 -2.5 z m -0.5 0.4 c2.7338 -0.2 5.6 0.2 7.5 2.4 1.7 0 3.7 0 4.8 1.5 1 1.2 3.4 1.8 3.4 3 0 2.1 -3.2 0.5 -3.6 0.1 -1.3 -1.4 -2.9 -0.6 -4.5 -0.7 -1.6 -0.1 -3.2 0.4 -4.6 -0.6 -1.1 -0.7 -2.5 0.1 -3.8 -0.1 -1.8 -0.2 -4 -0.4 -5.9 -0.1 -1.4 0 -2.8 0.1 -4.2 0 -1.7 0.5 -5.5 1.1 -5.4 0.4 0.2 -1.1 4.5 -3.2 5.9 -3.9 1.9 -0.9 3.7 -1.1 6.2 -0.8 0.7 -0.2 1.7 -1.1 4.3 -1.3 z m2 6 c1.6 0.3 2 2.2 1.2 3.3 -1 1.3 -1 -1.3 -1.3 -2 -0.2 -0.5 -0.8 -1.3 0.1 -1.3 z m -12.9 0.2 c1 -0.1 3.5 -0.3 3.1 0.9 -1.4 0 -3.4 0.1 -4.4 -0.6 0.4 -0.2 0.9 -0.2 1.3 -0.3 z m5.6 -0.1 c0.8 0.1 3.1 -0.3 3 0.5 -1.3 0.6 -1.6 2.2 -2.1 3.1 -0.4 -1.2 -0.7 -2.7 -2.1 -3.2 -0.9 -0.6 1 -0.5 1.3 -0.4 z m5.3 0.3 c1.1 0.1 1.6 2.4 0.1 1.3 -1.6 -1.2 -0.6 -1.3 -0.1 -1.3 z m7.5 0.4 c1.2 0 3.3 -0.2 2.9 0.2 -1.4 1.2 -3 -0.3 -4.8 0.8 -0.9 0.5 -2 0.8 -1.1 -0.4 0.5 -0.6 1.3 -0.5 3 -0.6 z m -8.9 0.1 c0.7 1.2 2.1 1.5 2.9 2.1 0.9 1.6 -0.5 3.1 -1.3 4.5 -0.9 1.5 -1.9 2.2 -2.4 0.3 -0.1 -0.5 -1.8 -2.2 -1.2 -3.7 0.3 -1.3 0.6 -2.6 2 -3.2 z m12.5 0.1 c0.6 0.2 1.3 1.1 0.2 0.9 -1.4 -0.1 -1.4 -0.3 -0.2 -0.9 z" fill="#5c5c70"></path>
+          <path d="m34.5 44.5 c 1.8, -3 8.1, -5.7 12.6, -5.4 6, -2.2 9.3, -0.9 11.9, 1.3 1.7, 0.2 3.2,-0.3 5.2, 2.2 2.7, 1.2 3.7, 2.4 2.7, 3.7 -1.6, 0.3 -2.2, 0 -4.7, -1.6 -5.2, 0.1 -7, 0.7 -8.7, -0.9 -2.8, 1 -3.6, 0 -9.7, 0.2 -4.6, 0 -8, 1.6 -9.3, 0.4 z" fill="#fff" />
+          <path d="m52 38 c-2.3 -0.1 -4.3 1.1 -4.9 1.1 -2.2 -0.2 -5 0.2 -6.4 1 -1.3 0.7 -2.8 1.6 -3.7 2.1 -1 0.6 -3.4 1.8 -2.2 2.7 1.1 0.9 3.1 -0.2 4.2 0.3 1.4 0.8 2.9 1 4.5 0.9 1.1 -0.1 2.2 -0.4 2.4 1 0.3 1.9 1.1 3.5 2.1 5.1 0.8 2.4 1 2.8 1 6.8 l2 0 c 0 -1.1 -0.1 -4 1.2 -5.7 1.1 -1.4 1.4 -3.4 3 -4.4 0.9 -1.4 2 -2.6 3.8 -2.7 1.7 -0.3 3.8 0.8 5.1 0.3 0.9 -0.1 3.2 1 3.5 -1 0.1 -2 -2.2 -2.1 -3.2 -3.3 -1.1 -1.5 -3.3 -1.9 -4.9 -1.8 -1 -0.5 -2 -2.5 -7.3 -2.5 z m -0.5 0.4 c2.7338 -0.2 5.6 0.2 7.5 2.4 1.7 0 3.7 0 4.8 1.5 1 1.2 3.4 1.8 3.4 3 0 2.1 -3.2 0.5 -3.6 0.1 -1.3 -1.4 -2.9 -0.6 -4.5 -0.7 -1.6 -0.1 -3.2 0.4 -4.6 -0.6 -1.1 -0.7 -2.5 0.1 -3.8 -0.1 -1.8 -0.2 -4 -0.4 -5.9 -0.1 -1.4 0 -2.8 0.1 -4.2 0 -1.7 0.5 -5.5 1.1 -5.4 0.4 0.2 -1.1 4.5 -3.2 5.9 -3.9 1.9 -0.9 3.7 -1.1 6.2 -0.8 0.7 -0.2 1.7 -1.1 4.3 -1.3 z m2 6 c1.6 0.3 2 2.2 1.2 3.3 -1 1.3 -1 -1.3 -1.3 -2 -0.2 -0.5 -0.8 -1.3 0.1 -1.3 z m -12.9 0.2 c1 -0.1 3.5 -0.3 3.1 0.9 -1.4 0 -3.4 0.1 -4.4 -0.6 0.4 -0.2 0.9 -0.2 1.3 -0.3 z m5.6 -0.1 c0.8 0.1 3.1 -0.3 3 0.5 -1.3 0.6 -1.6 2.2 -2.1 3.1 -0.4 -1.2 -0.7 -2.7 -2.1 -3.2 -0.9 -0.6 1 -0.5 1.3 -0.4 z m5.3 0.3 c1.1 0.1 1.6 2.4 0.1 1.3 -1.6 -1.2 -0.6 -1.3 -0.1 -1.3 z m7.5 0.4 c1.2 0 3.3 -0.2 2.9 0.2 -1.4 1.2 -3 -0.3 -4.8 0.8 -0.9 0.5 -2 0.8 -1.1 -0.4 0.5 -0.6 1.3 -0.5 3 -0.6 z m -8.9 0.1 c0.7 1.2 2.1 1.5 2.9 2.1 0.9 1.6 -0.5 3.1 -1.3 4.5 -0.9 1.5 -1.9 2.2 -2.4 0.3 -0.1 -0.5 -1.8 -2.2 -1.2 -3.7 0.3 -1.3 0.6 -2.6 2 -3.2 z m12.5 0.1 c0.6 0.2 1.3 1.1 0.2 0.9 -1.4 -0.1 -1.4 -0.3 -0.2 -0.9 z" fill="#5c5c70" />
           <path d="m47 42.33 c2 0.1 4.1 0.5 6.1 -0.3 1.4 -0.3 2.6 0.8 3.6 1.6 0.7 0.4 2.5 0.7 2.7 1.2 -2.2 -0.1 -3.6 0.4 -4.8 -0.4 -1 -0.7 -2.2 -0.3 -3 -0.2 -0.9 0.1 -3 -0.4 -5.5 -0.2 -2.6 0.2 -5.1 -0.1 -7.2 0.5 -3.6 0.6 -3.7 0 -3.7 0 2.2 -2 9.1 -1.7 11.9 -2.2 z" fill="#999999"/>
         </symbol>
         <symbol id="relief-palm-1" viewBox="0 0 100 100">
-          <path d="m 48.1,55.5 2.1,0 c 0,0 1.3,-5.5 1.2,-8.6 0,-3.2 -1.1,-5.5 -1.1,-5.5 l -0.5,-0.4 -0.2,0.1 c 0,0 0.9,2.7 0.5,6.2 -0.5,3.8 -2.1,8.2 -2.1,8.2 z" fill="#5c5c70"></path>
-          <path d="m 54.9,48.8 c 0,0 1.9,-2.5 0.3,-5.4 -1.4,-2.6 -4.3,-3.2 -4.3,-3.2 0,0 1.6,-0.6 3.3,-0.3 1.7,0.3 4.1,2.5 4.1,2.5 0,0 -0.6,-3.6 -3.6,-4.4 -2.2,-0.6 -4.2,1.3 -4.2,1.3 0,0 0.3,-1.5 -0.2,-2.9 -0.6,-1.4 -2.6,-1.9 -2.6,-1.9 0,0 0.8,1.1 1.2,2.2 0.3,0.9 0.3,2 0.3,2 0,0 -1.3,-1.8 -3.7,-1.5 -2.5,0.2 -3.7,2.5 -3.7,2.5 0,0 2.3,-0.6 3.4,-0.6 1.1,0.1 2.6,0.8 2.6,0.8 l -0.4,0.2 c 0,0 -1.2,-0.4 -2.7,0.4 -1.9,1.1 -2.9,3.7 -2.9,3.7 0,0 1.4,-1.4 2.3,-1.9 0.5,-0.3 1.8,-0.7 1.8,-0.7 0,0 -0.7,1.3 -0.9,3.1 -0.1,2.5 1.1,4.6 1.1,4.6 0,0 0.1,-3.4 1.2,-5.6 1,-1.9 2.3,-2.6 2.3,-2.6 l 0.4,-0.2 c 0,0 1.5,0.7 2.8,2.8 1,1.7 2.3,5 2.3,5 z" fill="#fff" stroke="#5c5c70"  stroke-width=".6"></path>
-          <path d="m 47.75,34.61 c 0,0 0.97,1.22 1.22,2.31 0.2,0.89 0.35,2.81 0.35,2.81 0,0 -1.59,-1.5 -3.2,-1.61 -1.82,-0.13 -3.97,1.31 -3.97,1.31 0,0 2.11,-0.49 3.34,-0.47 1.51,0.03 3.33,1.21 3.33,1.21 0,0 -1.7,0.83 -2.57,2.8 -0.88,1.97 -0.34,6.01 -0.34,6.01 0,0 0.04,-2.95 0.94,-4.96 0.8,-1.78 2.11,-2.67 2.44,-2.85 0.66,-0.34 0.49,-1.09 0.49,-1.09 0,0 -0.1,-2.18 -0.52,-3.37 -0.42,-1.21 -1.51,-2.11 -1.51,-2.11 z" fill="#999"></path>
-          <path d="m 42,43.7 c 0,0 1.2,-1.1 1.8,-1.5 0.7,-0.4 2,-0.8 2,-0.8 L 46.5,40.5 c 0,0 -0.8,0 -2.3,0.8 -1.3,0.8 -2.2,2.3 -2.2,2.3 z" fill="#999"></path>
+          <path d="m 48.1,55.5 2.1,0 c 0,0 1.3,-5.5 1.2,-8.6 0,-3.2 -1.1,-5.5 -1.1,-5.5 l -0.5,-0.4 -0.2,0.1 c 0,0 0.9,2.7 0.5,6.2 -0.5,3.8 -2.1,8.2 -2.1,8.2 z" fill="#5c5c70" />
+          <path d="m 54.9,48.8 c 0,0 1.9,-2.5 0.3,-5.4 -1.4,-2.6 -4.3,-3.2 -4.3,-3.2 0,0 1.6,-0.6 3.3,-0.3 1.7,0.3 4.1,2.5 4.1,2.5 0,0 -0.6,-3.6 -3.6,-4.4 -2.2,-0.6 -4.2,1.3 -4.2,1.3 0,0 0.3,-1.5 -0.2,-2.9 -0.6,-1.4 -2.6,-1.9 -2.6,-1.9 0,0 0.8,1.1 1.2,2.2 0.3,0.9 0.3,2 0.3,2 0,0 -1.3,-1.8 -3.7,-1.5 -2.5,0.2 -3.7,2.5 -3.7,2.5 0,0 2.3,-0.6 3.4,-0.6 1.1,0.1 2.6,0.8 2.6,0.8 l -0.4,0.2 c 0,0 -1.2,-0.4 -2.7,0.4 -1.9,1.1 -2.9,3.7 -2.9,3.7 0,0 1.4,-1.4 2.3,-1.9 0.5,-0.3 1.8,-0.7 1.8,-0.7 0,0 -0.7,1.3 -0.9,3.1 -0.1,2.5 1.1,4.6 1.1,4.6 0,0 0.1,-3.4 1.2,-5.6 1,-1.9 2.3,-2.6 2.3,-2.6 l 0.4,-0.2 c 0,0 1.5,0.7 2.8,2.8 1,1.7 2.3,5 2.3,5 z" fill="#fff" stroke="#5c5c70"  stroke-width=".6" />
+          <path d="m 47.75,34.61 c 0,0 0.97,1.22 1.22,2.31 0.2,0.89 0.35,2.81 0.35,2.81 0,0 -1.59,-1.5 -3.2,-1.61 -1.82,-0.13 -3.97,1.31 -3.97,1.31 0,0 2.11,-0.49 3.34,-0.47 1.51,0.03 3.33,1.21 3.33,1.21 0,0 -1.7,0.83 -2.57,2.8 -0.88,1.97 -0.34,6.01 -0.34,6.01 0,0 0.04,-2.95 0.94,-4.96 0.8,-1.78 2.11,-2.67 2.44,-2.85 0.66,-0.34 0.49,-1.09 0.49,-1.09 0,0 -0.1,-2.18 -0.52,-3.37 -0.42,-1.21 -1.51,-2.11 -1.51,-2.11 z" fill="#999" />
+          <path d="m 42,43.7 c 0,0 1.2,-1.1 1.8,-1.5 0.7,-0.4 2,-0.8 2,-0.8 L 46.5,40.5 c 0,0 -0.8,0 -2.3,0.8 -1.3,0.8 -2.2,2.3 -2.2,2.3 z" fill="#999" />
         </symbol>
         <symbol id="relief-grass-1" viewBox="0 0 100 100">
-          <path d="m 49.5,53.1 c 0,-3.4 -2.4,-4.8 -3,-5.4 1,1.8 2.4,3.7 1.8,5.4 z M 51,53.2 C 51.4,49.6 49.6,47.9 48,46.8 c 1.1,1.8 2.8,4.6 1.8,6.5 z M 51.4,51.4 c 0.6,-1.9 1.8,-3.4 3,-4.3 -0.8,0.3 -2.9,1.5 -3.4,2.8 0.2,0.4 0.3,0.8 0.4,1.5 z M 52.9,53.2 c -0.7,-1.9 0.5,-3.3 1.5,-4.4 -1.7,1 -3,2.2 -2.7,4.4 z" fill="#5c5c70" stroke="none"></path>
+          <path d="m 49.5,53.1 c 0,-3.4 -2.4,-4.8 -3,-5.4 1,1.8 2.4,3.7 1.8,5.4 z M 51,53.2 C 51.4,49.6 49.6,47.9 48,46.8 c 1.1,1.8 2.8,4.6 1.8,6.5 z M 51.4,51.4 c 0.6,-1.9 1.8,-3.4 3,-4.3 -0.8,0.3 -2.9,1.5 -3.4,2.8 0.2,0.4 0.3,0.8 0.4,1.5 z M 52.9,53.2 c -0.7,-1.9 0.5,-3.3 1.5,-4.4 -1.7,1 -3,2.2 -2.7,4.4 z" fill="#5c5c70" stroke="none" />
         </symbol>
         <symbol id="relief-swamp-1" viewBox="0 0 100 100">
-          <path d="m50,46 v6 l3,-4 m-3,4 l-3,-4 m-7,4.5 h4 m4,0 h4 m4,0 h4" fill="none" stroke="#5c5c70"></path>
+          <path d="m 50,46 v 6 m 0,0 3,-4 m -3,4 -3,-4 m -6,4.5 h 3 m 4,0 h 4 m 4,0 3,0" fill="none" stroke="#5c5c70" stroke-linecap="round" />
         </symbol>
         <symbol id="relief-dune-1" viewBox="0 0 100 100">
-          <path d="m 28.7,52.8 c 5,-3.9 10,-8.2 15.8,-8.3 4.5,0 10.8,3.8 15.2,6.5 3.5,2.2 6.8,2 6.8,2" fill="none" stroke="#5c5c70" stroke-width="1.8"></path>
-          <path d="m 44.2,47.6 c -3.2,3.2 3.5,5.7 5.9,7.8" fill="none" stroke="#5c5c70"></path>
+          <path d="m 28.7,52.8 c 5,-3.9 10,-8.2 15.8,-8.3 4.5,0 10.8,3.8 15.2,6.5 3.5,2.2 6.8,2 6.8,2" fill="none" stroke="#5c5c70" stroke-width="1.8" />
+          <path d="m 44.2,47.6 c -3.2,3.2 3.5,5.7 5.9,7.8" fill="none" stroke="#5c5c70" />
         </symbol>
 
         <symbol id="relief-mount-2-bw" viewBox="-5 -5 50 50">
@@ -4035,9 +4151,9 @@
         <use href="#sL" transform="rotate(-56.25)"/>
         <g stroke-width="8" stroke-opacity="1" shape-rendering="geometricprecision">
           <circle r="9" stroke="#000000" fill="#1b1b1b"/>
-          <circle r="75" stroke="#008000" fill="#ffffff" fill-opacity=".1"></circle>
-          <circle r="212" stroke="#1b1b1b"></circle>
-          <circle r="211" stroke="#008000" fill="#ffffff" fill-opacity=".1"></circle>
+          <circle r="75" stroke="#008000" fill="#ffffff" fill-opacity=".1" />
+          <circle r="212" stroke="#1b1b1b" />
+          <circle r="211" stroke="#008000" fill="#ffffff" fill-opacity=".1" />
         </g>
         <g stroke="#1b1b1b" stroke-opacity="1" shape-rendering="geometricprecision">
           <circle r="71"/>
@@ -4062,6 +4178,18 @@
       </g>
 
       <g id="coas"></g>
+
+      <g id="gridPatterns">
+        <pattern id="pattern_square" width="25" height="25" patternUnits="userSpaceOnUse" fill="none">
+          <path d="M 25 0 L 0 0 0 25"/>
+        </pattern>
+        <pattern id="pattern_pointyHex" width="25" height="43.4" patternUnits="userSpaceOnUse" fill="none">
+          <path d="M 0,0 12.5,7.2 25,0 M 12.5,21.7 V 7.2 Z M 0,43.4 V 28.9 L 12.5,21.7 25,28.9 v 14.5"/>
+        </pattern>
+        <pattern id="pattern_flatHex" width="43.4" height="25" patternUnits="userSpaceOnUse" fill="none">
+          <path d="M 43.4,0 36.2,12.5 43.4,25 M 21.7,12.5 H 36.2 Z M 0,0 H 14.5 L 21.7,12.5 14.5,25 H 0"/>
+        </pattern>
+      </g>
     </defs>
   </svg>
 
@@ -4072,6 +4200,7 @@
   <script src="libs/delaunator.min.js"></script>
   <script src="modules/utils.js"></script>
   <script src="modules/voronoi.js"></script>
+  <script src="modules/heightmap-templates.js"></script>
   <script src="modules/heightmap-generator.js"></script>
   <script src="modules/ocean-layers.js"></script>
   <script src="modules/river-generator.js"></script>
@@ -4087,13 +4216,15 @@
   <script src="libs/lineclip.min.js"></script>
   <script src="libs/jquery-ui.min.js"></script>
   <script src="libs/alea.min.js"></script>
+  <script src="modules/fonts.js"></script>
   <script src="modules/ui/layers.js"></script>
   <script src="modules/ui/measurers.js"></script>
 
   <script defer src="modules/ui/general.js"></script>
   <script defer src="modules/ui/options.js"></script>
   <script defer src="modules/ui/style.js"></script>
-  <script defer src="modules/save-and-load.js"></script>
+  <script defer src="modules/save.js"></script>
+  <script defer src="modules/load.js"></script>
   <script defer src="main.js"></script>
   <script defer src="modules/relief-icons.js"></script>
   <script defer src="modules/ui/tools.js"></script>
@@ -4111,6 +4242,7 @@
   <script defer src="modules/ui/coastline-editor.js"></script>
   <script defer src="modules/ui/labels-editor.js"></script>
   <script defer src="modules/ui/rivers-editor.js"></script>
+  <script defer src="modules/ui/rivers-creator.js"></script>
   <script defer src="modules/ui/relief-editor.js"></script>
   <script defer src="modules/ui/religions-editor.js"></script>
   <script defer src="modules/ui/markers-editor.js"></script>
@@ -4132,5 +4264,6 @@
   <script defer src="libs/rgbquant.min.js"></script>
   <script defer src="libs/jquery.ui.touch-punch.min.js"></script>
   <script defer src="libs/pell.min.js"></script>
+  <script defer src="libs/jszip.min.js"></script>
 </body>
 </html>
