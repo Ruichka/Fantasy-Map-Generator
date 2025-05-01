@@ -112,7 +112,9 @@ function showBurgTemperatureGraph(id) {
 
   $("#alert").dialog({
     title: "Average temperature in " + b.name,
-    position: {my: "center", at: "center", of: "svg"}
+    position: {my: "center", at: "center", of: "svg"},
+    width: "auto",
+    buttons: {}
   });
 
   function drawGraph() {
