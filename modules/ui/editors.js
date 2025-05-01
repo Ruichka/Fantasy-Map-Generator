@@ -1,40 +1,37 @@
 // module stub to store common functions for ui editors
 "use strict";
 
-restoreDefaultEvents(); // apply default viewbox events on load
+modules.editors = true;
 
 // restore default viewbox events
 function restoreDefaultEvents() {
   svg.call(zoom);
-  viewbox.style("cursor", "default").on(".drag", null).on("click", clicked).on("touchmove mousemove", moved);
+  viewbox.style("cursor", "default").on(".drag", null).on("click", clicked).on("touchmove mousemove", onMouseMove);
   legend.call(d3.drag().on("start", dragLegendBox));
+  svg.call(zoom);
 }
 
-// on viewbox click event - run function based on target
+// handle viewbox click
 function clicked() {
   const el = d3.event.target;
-  if (!el || !el.parentElement || !el.parentElement.parentElement) return;
-  const parent = el.parentElement;
-  const grand = parent.parentElement;
-  const great = grand.parentElement;
-  const p = d3.mouse(this);
-  const i = findCell(p[0], p[1]);
+  const parent = el?.parentElement;
+  const grand = parent?.parentElement;
+  const great = grand?.parentElement;
+  const ancestor = great?.parentElement;
+  if (!ancestor) return;
 
   if (grand.id === "emblems") editEmblem();
   else if (parent.id === "rivers") editRiver(el.id);
-  else if (grand.id === "routes") editRoute();
-  else if (el.tagName === "tspan" && grand.parentNode.parentNode.id === "labels") editLabel();
+  else if (grand.id === "routes") editRoute(el.id);
+  else if (ancestor.id === "labels" && el.tagName === "tspan") editLabel();
   else if (grand.id === "burgLabels") editBurg();
   else if (grand.id === "burgIcons") editBurg();
   else if (parent.id === "ice") editIce();
   else if (parent.id === "terrain") editReliefIcon();
-  else if (parent.id === "markers") editMarker();
+  else if (grand.id === "markers" || great.id === "markers") editMarker();
   else if (grand.id === "coastline") editCoastline();
+  else if (grand.id === "lakes") editLake();
   else if (great.id === "armies") editRegiment();
-  else if (pack.cells.t[i] === 1) {
-    const node = document.getElementById("island_" + pack.cells.f[i]);
-    editCoastline(node);
-  } else if (grand.id === "lakes") editLake();
 }
 
 // clear elSelected variable
@@ -49,19 +46,21 @@ function unselect() {
 
 // close all dialogs except stated
 function closeDialogs(except = "#except") {
-  $(".dialog:visible")
-    .not(except)
-    .each(function () {
-      $(this).dialog("close");
-    });
+  try {
+    $(".dialog:visible")
+      .not(except)
+      .each(function () {
+        $(this).dialog("close");
+      });
+  } catch (error) {}
 }
 
 // move brush radius circle
 function moveCircle(x, y, r = 20) {
-  let circle = document.getElementById("brushCircle");
+  let circle = byId("brushCircle");
   if (!circle) {
-    const html = `<circle id="brushCircle" cx=${x} cy=${y} r=${r}></circle>`;
-    document.getElementById("debug").insertAdjacentHTML("afterBegin", html);
+    const html = /* html */ `<circle id="brushCircle" cx=${x} cy=${y} r=${r}></circle>`;
+    byId("debug").insertAdjacentHTML("afterBegin", html);
   } else {
     circle.setAttribute("cx", x);
     circle.setAttribute("cy", y);
@@ -70,7 +69,7 @@ function moveCircle(x, y, r = 20) {
 }
 
 function removeCircle() {
-  if (document.getElementById("brushCircle")) document.getElementById("brushCircle").remove();
+  if (byId("brushCircle")) byId("brushCircle").remove();
 }
 
 // get browser-defined fit-content
@@ -79,24 +78,35 @@ function fitContent() {
 }
 
 // apply sorting behaviour for lines on Editor header click
-document.querySelectorAll(".sortable").forEach(function (e) {
-  e.addEventListener("click", function (e) {
+document.querySelectorAll(".sortable").forEach(function (event) {
+  event.on("click", function () {
     sortLines(this);
   });
 });
 
-function sortLines(header) {
-  const type = header.classList.contains("alphabetically") ? "name" : "number";
-  let order = header.className.includes("-down") ? "-up" : "-down";
-  if (!header.className.includes("icon-sort") && type === "name") order = "-up";
+function applySortingByHeader(headerContainer) {
+  document
+    .getElementById(headerContainer)
+    .querySelectorAll(".sortable")
+    .forEach(function (element) {
+      element.on("click", function () {
+        sortLines(this);
+      });
+    });
+}
 
-  const headers = header.parentNode;
+function sortLines(headerElement) {
+  const type = headerElement.classList.contains("alphabetically") ? "name" : "number";
+  let order = headerElement.className.includes("-down") ? "-up" : "-down";
+  if (!headerElement.className.includes("icon-sort") && type === "name") order = "-up";
+
+  const headers = headerElement.parentNode;
   headers.querySelectorAll("div.sortable").forEach(e => {
     e.classList.forEach(c => {
       if (c.includes("icon-sort")) e.classList.remove(c);
     });
   });
-  header.classList.add("icon-sort-" + type + order);
+  headerElement.classList.add("icon-sort-" + type + order);
   applySorting(headers);
 }
 
@@ -119,27 +129,43 @@ function applySorting(headers) {
 }
 
 function addBurg(point) {
-  const cells = pack.cells;
-  const x = rn(point[0], 2),
-    y = rn(point[1], 2);
-  const cell = findCell(x, point[1]);
-  const i = pack.burgs.length;
-  const culture = cells.culture[cell];
-  const name = Names.getCulture(culture);
-  const state = cells.state[cell];
-  const feature = cells.f[cell];
+  const {cells, states} = pack;
+  const x = rn(point[0], 2);
+  const y = rn(point[1], 2);
 
-  const temple = pack.states[state].form === "Theocracy";
-  const population = Math.max((cells.s[cell] + cells.road[cell]) / 3 + i / 1000 + (cell % 100) / 1000, 0.1);
-  const type = BurgsAndStates.getType(cell, false);
+  const cellId = findCell(x, y);
+  const i = pack.burgs.length;
+  const culture = cells.culture[cellId];
+  const name = Names.getCulture(culture);
+  const state = cells.state[cellId];
+  const feature = cells.f[cellId];
+
+  const population = Math.max(cells.s[cellId] / 3 + i / 1000 + (cellId % 100) / 1000, 0.1);
+  const type = BurgsAndStates.getType(cellId, false);
 
   // generate emblem
-  const coa = COA.generate(pack.states[state].coa, 0.25, null, type);
+  const coa = COA.generate(states[state].coa, 0.25, null, type);
   coa.shield = COA.getShield(culture, state);
   COArenderer.add("burg", i, coa, x, y);
 
-  pack.burgs.push({name, cell, x, y, state, i, culture, feature, capital: 0, port: 0, temple, population, coa, type});
-  cells.burg[cell] = i;
+  const burg = {
+    name,
+    cell: cellId,
+    x,
+    y,
+    state,
+    i,
+    culture,
+    feature,
+    capital: 0,
+    port: 0,
+    temple: 0,
+    population,
+    coa,
+    type
+  };
+  pack.burgs.push(burg);
+  cells.burg[cellId] = i;
 
   const townSize = burgIcons.select("#towns").attr("size") || 0.5;
   burgIcons
@@ -153,6 +179,7 @@ function addBurg(point) {
   burgLabels
     .select("#towns")
     .append("text")
+    .attr("text-rendering", "optimizeSpeed")
     .attr("id", "burgLabel" + i)
     .attr("data-id", i)
     .attr("x", x)
@@ -160,7 +187,17 @@ function addBurg(point) {
     .attr("dy", `${townSize * -1.5}px`)
     .text(name);
 
-  BurgsAndStates.defineBurgFeatures(pack.burgs[i]);
+  BurgsAndStates.defineBurgFeatures(burg);
+
+  const newRoute = Routes.connect(cellId);
+  if (newRoute && layerIsOn("toggleRoutes")) {
+    routes
+      .select("#" + newRoute.group)
+      .append("path")
+      .attr("d", Routes.getPath(newRoute))
+      .attr("id", "route" + newRoute.i);
+  }
+
   return i;
 }
 
@@ -169,7 +206,7 @@ function moveBurgToGroup(id, g) {
   const icon = document.querySelector("#burgIcons [data-id='" + id + "']");
   const anchor = document.querySelector("#anchors [data-id='" + id + "']");
   if (!label || !icon) {
-    ERROR && console.error("Cannot find label or icon elements");
+    ERROR && console.error(`Cannot find label or icon elements for id ${id}`);
     return;
   }
 
@@ -190,46 +227,63 @@ function moveBurgToGroup(id, g) {
   }
 }
 
-function removeBurg(id) {
-  const label = document.querySelector("#burgLabels [data-id='" + id + "']");
-  const icon = document.querySelector("#burgIcons [data-id='" + id + "']");
-  const anchor = document.querySelector("#anchors [data-id='" + id + "']");
-  if (label) label.remove();
-  if (icon) icon.remove();
-  if (anchor) anchor.remove();
+function moveAllBurgsToGroup(fromGroup, toGroup) {
+  const groupToMove = document.querySelector(`#burgIcons #${fromGroup}`);
+  const burgsToMove = Array.from(groupToMove.children).map(x => x.dataset.id);
+  addBurgsGroup(toGroup);
+  burgsToMove.forEach(x => moveBurgToGroup(x, toGroup));
+}
 
-  const cells = pack.cells,
-    burg = pack.burgs[id];
+function addBurgsGroup(group) {
+  if (document.querySelector(`#burgLabels > #${group}`)) return;
+  const labelCopy = document.querySelector("#burgLabels > #towns").cloneNode(false);
+  const iconCopy = document.querySelector("#burgIcons > #towns").cloneNode(false);
+  const anchorCopy = document.querySelector("#anchors > #towns").cloneNode(false);
+
+  // FIXME: using the same id is against the spec!
+  document.querySelector("#burgLabels").appendChild(labelCopy).id = group;
+  document.querySelector("#burgIcons").appendChild(iconCopy).id = group;
+  document.querySelector("#anchors").appendChild(anchorCopy).id = group;
+}
+
+function removeBurg(id) {
+  document.querySelector("#burgLabels [data-id='" + id + "']")?.remove();
+  document.querySelector("#burgIcons [data-id='" + id + "']")?.remove();
+  document.querySelector("#anchors [data-id='" + id + "']")?.remove();
+
+  const cells = pack.cells;
+  const burg = pack.burgs[id];
+
   burg.removed = true;
   cells.burg[burg.cell] = 0;
 
+  const noteId = notes.findIndex(note => note.id === `burg${id}`);
+  if (noteId !== -1) notes.splice(noteId, 1);
+
   if (burg.coa) {
     const coaId = "burgCOA" + id;
-    if (document.getElementById(coaId)) document.getElementById(coaId).remove();
+    if (byId(coaId)) byId(coaId).remove();
     emblems.select(`#burgEmblems > use[data-i='${id}']`).remove();
     delete burg.coa; // remove to save data
   }
 }
 
-function toggleCapital(burg) {
-  const state = pack.burgs[burg].state;
-  if (!state) {
-    tip("Neutral lands cannot have a capital", false, "error");
-    return;
-  }
-  if (pack.burgs[burg].capital) {
-    tip("To change capital please assign a capital status to another burg of this state", false, "error");
-    return;
-  }
-  const old = pack.states[state].capital;
+function toggleCapital(burgId) {
+  const {burgs, states} = pack;
+  if (burgs[burgId].capital)
+    return tip("To change capital please assign a capital status to another burg of this state", false, "error");
 
-  // change statuses
-  pack.states[state].capital = burg;
-  pack.states[state].center = pack.burgs[burg].cell;
-  pack.burgs[burg].capital = 1;
-  pack.burgs[old].capital = 0;
-  moveBurgToGroup(burg, "cities");
-  moveBurgToGroup(old, "towns");
+  const stateId = burgs[burgId].state;
+  if (!stateId) return tip("Neutral lands cannot have a capital", false, "error");
+
+  const prevCapitalId = states[stateId].capital;
+  states[stateId].capital = burgId;
+  states[stateId].center = burgs[burgId].cell;
+  burgs[burgId].capital = 1;
+  burgs[prevCapitalId].capital = 0;
+
+  moveBurgToGroup(burgId, "cities");
+  moveBurgToGroup(prevCapitalId, "towns");
 }
 
 function togglePort(burg) {
@@ -259,18 +313,121 @@ function togglePort(burg) {
     .attr("height", size);
 }
 
-function toggleBurgLock(burg) {
-  const b = pack.burgs[burg];
-  b.lock = b.lock ? 0 : 1;
+function getBurgLink(burg) {
+  if (burg.link) return burg.link;
+
+  const population = burg.population * populationRate * urbanization;
+  if (population >= options.villageMaxPopulation || burg.citadel || burg.walls || burg.temple || burg.shanty)
+    return createMfcgLink(burg);
+
+  return createVillageGeneratorLink(burg);
 }
 
-function showBurgLockTip(burg) {
-  const b = pack.burgs[burg];
-  if (b.lock) {
-    tip("Click to Unlock burg and allow it to be change by regeneration tools");
-  } else {
-    tip("Click to Lock burg and prevent changes by regeneration tools");
-  }
+function createMfcgLink(burg) {
+  const {cells} = pack;
+  const {i, name, population: burgPopulation, cell} = burg;
+  const burgSeed = burg.MFCG || seed + String(burg.i).padStart(4, 0);
+
+  const sizeRaw = 2.13 * Math.pow((burgPopulation * populationRate) / urbanDensity, 0.385);
+  const size = minmax(Math.ceil(sizeRaw), 6, 100);
+  const population = rn(burgPopulation * populationRate * urbanization);
+
+  const river = cells.r[cell] ? 1 : 0;
+  const coast = Number(burg.port > 0);
+  const sea = (() => {
+    if (!coast || !cells.haven[cell]) return null;
+
+    // calculate see direction: 0 = south, 0.5 = west, 1 = north, 1.5 = east
+    const p1 = cells.p[cell];
+    const p2 = cells.p[cells.haven[cell]];
+    let deg = (Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180) / Math.PI - 90;
+    if (deg < 0) deg += 360;
+    return rn(normalize(deg, 0, 360) * 2, 2);
+  })();
+
+  const arableBiomes = river ? [1, 2, 3, 4, 5, 6, 7, 8] : [5, 6, 7, 8];
+  const farms = +arableBiomes.includes(cells.biome[cell]);
+
+  const citadel = +burg.citadel;
+  const urban_castle = +(citadel && each(2)(i));
+
+  const hub = Routes.isCrossroad(cell);
+  const walls = +burg.walls;
+  const plaza = +burg.plaza;
+  const temple = +burg.temple;
+  const shantytown = +burg.shanty;
+
+  const url = new URL("https://watabou.github.io/city-generator/");
+  url.search = new URLSearchParams({
+    name,
+    population,
+    size,
+    seed: burgSeed,
+    river,
+    coast,
+    farms,
+    citadel,
+    urban_castle,
+    hub,
+    plaza,
+    temple,
+    walls,
+    shantytown,
+    gates: -1
+  });
+  if (sea) url.searchParams.append("sea", sea);
+
+  return url.toString();
+}
+
+function createVillageGeneratorLink(burg) {
+  const {cells, features} = pack;
+  const {i, population, cell} = burg;
+
+  const pop = rn(population * populationRate * urbanization);
+  const burgSeed = seed + String(i).padStart(4, 0);
+  const tags = [];
+
+  if (cells.r[cell] && cells.haven[cell]) tags.push("estuary");
+  else if (cells.haven[cell] && features[cells.f[cell]].cells === 1) tags.push("island,district");
+  else if (burg.port) tags.push("coast");
+  else if (cells.conf[cell]) tags.push("confluence");
+  else if (cells.r[cell]) tags.push("river");
+  else if (pop < 200 && each(4)(cell)) tags.push("pond");
+
+  const roadsNumber = Object.values(pack.cells.routes[cell] || {}).filter(routeId => {
+    const route = pack.routes.find(route => route.i === routeId);
+    if (!route) return false;
+    return route.group === "roads" || route.group === "trails";
+  }).length;
+  tags.push(roadsNumber > 1 ? "highway" : roadsNumber === 1 ? "dead end" : "isolated");
+
+  const biome = cells.biome[cell];
+  const arableBiomes = cells.r[cell] ? [1, 2, 3, 4, 5, 6, 7, 8] : [5, 6, 7, 8];
+  if (!arableBiomes.includes(biome)) tags.push("uncultivated");
+  else if (each(6)(cell)) tags.push("farmland");
+
+  const temp = grid.cells.temp[cells.g[cell]];
+  if (temp <= 0 || temp > 28 || (temp > 25 && each(3)(cell))) tags.push("no orchards");
+
+  if (!burg.plaza) tags.push("no square");
+
+  if (pop < 100) tags.push("sparse");
+  else if (pop > 300) tags.push("dense");
+
+  const width = (() => {
+    if (pop > 1500) return 1600;
+    if (pop > 1000) return 1400;
+    if (pop > 500) return 1000;
+    if (pop > 200) return 800;
+    if (pop > 100) return 600;
+    return 400;
+  })();
+  const height = rn(width / 2.2);
+
+  const url = new URL("https://watabou.github.io/village-generator/");
+  url.search = new URLSearchParams({pop, name: "", seed: burgSeed, width, height, tags});
+  return url.toString();
 }
 
 // draw legend box
@@ -308,6 +465,7 @@ function drawLegend(name, data) {
 
       labels
         .append("text")
+        .attr("text-rendering", "optimizeSpeed")
         .text(data[i][2])
         .attr("x", offset + colorBoxSize * 1.6)
         .attr("y", fontSize / 1.6 + lineHeight + l * lineHeight + vOffset);
@@ -318,6 +476,7 @@ function drawLegend(name, data) {
   const offset = colOffset + legend.node().getBBox().width / 2;
   labels
     .append("text")
+    .attr("text-rendering", "optimizeSpeed")
     .attr("text-anchor", "middle")
     .attr("font-weight", "bold")
     .attr("font-size", "1.2em")
@@ -331,7 +490,15 @@ function drawLegend(name, data) {
   const width = bbox.width + colOffset * 2;
   const height = bbox.height + colOffset / 2 + vOffset;
 
-  legend.insert("rect", ":first-child").attr("id", "legendBox").attr("x", 0).attr("y", 0).attr("width", width).attr("height", height).attr("fill", backClr).attr("fill-opacity", opacity);
+  legend
+    .insert("rect", ":first-child")
+    .attr("id", "legendBox")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", backClr)
+    .attr("fill-opacity", opacity);
 
   fitLegendBox();
 }
@@ -349,13 +516,14 @@ function fitLegendBox() {
 
 // draw legend with the same data, but using different settings
 function redrawLegend() {
-  if (!legend.select("rect").size()) return;
-  const name = legend.select("#legendLabel").text();
-  const data = legend
-    .attr("data")
-    .split("|")
-    .map(l => l.split(","));
-  drawLegend(name, data);
+  if (legend.select("rect").size()) {
+    const name = legend.select("#legendLabel").text();
+    const data = legend
+      .attr("data")
+      .split("|")
+      .map(l => l.split(","));
+    drawLegend(name, data);
+  }
 }
 
 function dragLegendBox() {
@@ -381,11 +549,24 @@ function clearLegend() {
 function createPicker() {
   const pos = () => tip("Drag to change the picker position");
   const cl = () => tip("Click to close the picker");
-  const closePicker = () => contaiter.style("display", "none");
+  const closePicker = () => container.style("display", "none");
 
-  const contaiter = d3.select("body").append("svg").attr("id", "pickerContainer").attr("width", "100%").attr("height", "100%");
-  contaiter.append("rect").attr("x", 0).attr("y", 0).attr("width", "100%").attr("height", "100%").attr("opacity", 0.2).on("mousemove", cl).on("click", closePicker);
-  const picker = contaiter
+  const container = d3
+    .select("body")
+    .append("svg")
+    .attr("id", "pickerContainer")
+    .attr("width", "100%")
+    .attr("height", "100%");
+  container
+    .append("rect")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("opacity", 0.2)
+    .on("mousemove", cl)
+    .on("click", closePicker);
+  const picker = container
     .append("g")
     .attr("id", "picker")
     .call(
@@ -425,24 +606,23 @@ function createPicker() {
     .attr("width", 303)
     .attr("height", 20)
     .on("mousemove", () => tip("Color value in different color spaces. Edit to change"));
-  const html = `
-  <label style="margin-right: 6px">HSL: 
-    <input type="number" id="pickerHSL_H" data-space="hsl" min=0 max=360 value="231">,
-    <input type="number" id="pickerHSL_S" data-space="hsl" min=0 max=100 value="70">, 
-    <input type="number" id="pickerHSL_L" data-space="hsl" min=0 max=100 value="70">
-  </label>
-  <label style="margin-right: 6px">RGB: 
-    <input type="number" id="pickerRGB_R" data-space="rgb" min=0 max=255 value="125">,
-    <input type="number" id="pickerRGB_G" data-space="rgb" min=0 max=255 value="142">, 
-    <input type="number" id="pickerRGB_B" data-space="rgb" min=0 max=255 value="232">
-  </label>
-  <label>HEX: <input type="text" id="pickerHEX" data-space="hex" style="width:42px" autocorrect="off" spellcheck="false" value="#7d8ee8"></label>`;
+  const html = /* html */ ` <label style="margin-right: 6px"
+      >HSL: <input type="number" id="pickerHSL_H" data-space="hsl" min="0" max="360" value="231" />,
+      <input type="number" id="pickerHSL_S" data-space="hsl" min="0" max="100" value="70" />,
+      <input type="number" id="pickerHSL_L" data-space="hsl" min="0" max="100" value="70" />
+    </label>
+    <label style="margin-right: 6px"
+      >RGB: <input type="number" id="pickerRGB_R" data-space="rgb" min="0" max="255" value="125" />,
+      <input type="number" id="pickerRGB_G" data-space="rgb" min="0" max="255" value="142" />,
+      <input type="number" id="pickerRGB_B" data-space="rgb" min="0" max="255" value="232" />
+    </label>
+    <label>HEX: <input type="text" id="pickerHEX" data-space="hex" style="width:42px" autocorrect="off" spellcheck="false" value="#7d8ee8" /></label>`;
   spaces.node().insertAdjacentHTML("beforeend", html);
   spaces.selectAll("input").on("change", changePickerSpace);
 
   const colors = picker.append("g").attr("id", "pickerColors").attr("stroke", "#333333");
   const hatches = picker.append("g").attr("id", "pickerHatches").attr("stroke", "#333333");
-  const hatching = d3.selectAll("g#hatching > pattern");
+  const hatching = d3.selectAll("g#defs-hatching > pattern");
   const number = hatching.size();
 
   const clr = d3.range(number).map(i => d3.hsl((i / number) * 360, 0.7, 0.7).hex());
@@ -452,8 +632,8 @@ function createPicker() {
       .attr("id", "picker_" + d)
       .attr("fill", d)
       .attr("class", i ? "" : "selected")
-      .attr("x", i * 22 + 4)
-      .attr("y", 40)
+      .attr("x", (i % 14) * 22 + 4)
+      .attr("y", 40 + Math.floor(i / 14) * 20)
       .attr("width", 16)
       .attr("height", 16);
   });
@@ -463,8 +643,8 @@ function createPicker() {
       .append("rect")
       .attr("id", "picker_" + this.id)
       .attr("fill", "url(#" + this.id + ")")
-      .attr("x", i * 22 + 4)
-      .attr("y", 61)
+      .attr("x", (i % 14) * 22 + 4)
+      .attr("y", Math.floor(i / 14) * 20 + 20 + number * 2)
       .attr("width", 16)
       .attr("height", 16);
   });
@@ -472,27 +652,63 @@ function createPicker() {
   colors
     .selectAll("rect")
     .on("click", pickerFillClicked)
-    .on("mousemove", () => tip("Click to fill with the color"));
+    .on("mouseover", () => tip("Click to fill with the color"));
   hatches
     .selectAll("rect")
     .on("click", pickerFillClicked)
-    .on("mousemove", () => tip("Click to fill with the hatching"));
+    .on("mouseover", function () {
+      tip("Click to fill with the hatching " + this.id);
+    });
 
   // append box
   const bbox = picker.node().getBBox();
   const width = bbox.width + 8;
   const height = bbox.height + 9;
 
-  picker.insert("rect", ":first-child").attr("x", 0).attr("y", 0).attr("width", width).attr("height", height).attr("fill", "#ffffff").attr("stroke", "#5d4651").on("mousemove", pos);
-  picker.insert("text", ":first-child").attr("x", 291).attr("y", -10).attr("id", "pickerCloseText").text("✕");
-  picker.insert("rect", ":first-child").attr("x", 288).attr("y", -21).attr("id", "pickerCloseRect").attr("width", 14).attr("height", 14).on("mousemove", cl).on("click", closePicker);
-  picker.insert("text", ":first-child").attr("x", 12).attr("y", -10).attr("id", "pickerLabel").text("Color Picker").on("mousemove", pos);
-  picker.insert("rect", ":first-child").attr("x", 0).attr("y", -30).attr("width", width).attr("height", 30).attr("id", "pickerHeader").on("mousemove", pos);
+  picker
+    .insert("rect", ":first-child")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "#ffffff")
+    .attr("stroke", "#5d4651")
+    .on("mousemove", pos);
+  picker
+    .insert("text", ":first-child")
+    .attr("x", width - 20)
+    .attr("y", -10)
+    .attr("id", "pickerCloseText")
+    .text("✕");
+  picker
+    .insert("rect", ":first-child")
+    .attr("x", width - 23)
+    .attr("y", -21)
+    .attr("id", "pickerCloseRect")
+    .attr("width", 14)
+    .attr("height", 14)
+    .on("mousemove", cl)
+    .on("click", closePicker);
+  picker
+    .insert("text", ":first-child")
+    .attr("x", 12)
+    .attr("y", -10)
+    .attr("id", "pickerLabel")
+    .text("Color Picker")
+    .on("mousemove", pos);
+  picker
+    .insert("rect", ":first-child")
+    .attr("x", 0)
+    .attr("y", -30)
+    .attr("width", width)
+    .attr("height", 30)
+    .attr("id", "pickerHeader")
+    .on("mousemove", pos);
   picker.attr("transform", `translate(${(svgWidth - width) / 2},${(svgHeight - height) / 2})`);
 }
 
 function updateSelectedRect(fill) {
-  document.getElementById("picker").querySelector("rect.selected").classList.remove("selected");
+  byId("picker").querySelector("rect.selected").classList.remove("selected");
   document
     .getElementById("picker")
     .querySelector("rect[fill='" + fill.toLowerCase() + "']")
@@ -550,7 +766,7 @@ function openPicker(fill, callback) {
   updateSelectedRect(fill);
 
   openPicker.updateFill = function () {
-    const selected = document.getElementById("picker").querySelector("rect.selected");
+    const selected = byId("picker").querySelector("rect.selected");
     if (!selected) return;
     callback(selected.getAttribute("fill"));
   };
@@ -626,7 +842,12 @@ function changePickerSpace() {
 
   const space = this.dataset.space;
   const i = Array.from(this.parentNode.querySelectorAll("input")).map(input => input.value); // inputs
-  const fill = space === "hex" ? d3.rgb(this.value) : space === "rgb" ? d3.rgb(i[0], i[1], i[2]) : d3.hsl(i[0], i[1] / 100, i[2] / 100);
+  const fill =
+    space === "hex"
+      ? d3.rgb(this.value)
+      : space === "rgb"
+      ? d3.rgb(i[0], i[1], i[2])
+      : d3.hsl(i[0], i[1] / 100, i[2] / 100);
 
   const hsl = d3.hsl(fill);
   if (isNaN(hsl.l)) {
@@ -647,7 +868,14 @@ function fog(id, path) {
   if (defs.select("#fog #" + id).size()) return;
   const fadeIn = d3.transition().duration(2000).ease(d3.easeSinInOut);
   if (defs.select("#fog path").size()) {
-    defs.select("#fog").append("path").attr("d", path).attr("id", id).attr("opacity", 0).transition(fadeIn).attr("opacity", 1);
+    defs
+      .select("#fog")
+      .append("path")
+      .attr("d", path)
+      .attr("id", id)
+      .attr("opacity", 0)
+      .transition(fadeIn)
+      .attr("opacity", 1);
   } else {
     defs.select("#fog").append("path").attr("d", path).attr("id", id).attr("opacity", 1);
     const opacity = fogging.attr("opacity");
@@ -695,31 +923,52 @@ function uploadFile(el, callback) {
   fileReader.onload = loaded => callback(loaded.target.result);
 }
 
-function highlightElement(element) {
-  if (debug.select(".highlighted").size()) return; // allow only 1 highlight element simultaniosly
-  const box = element.getBBox();
+function getBBox(element) {
+  const x = +element.getAttribute("x");
+  const y = +element.getAttribute("y");
+  const width = +element.getAttribute("width");
+  const height = +element.getAttribute("height");
+  return {x, y, width, height};
+}
+
+function highlightElement(element, zoom) {
+  if (debug.select(".highlighted").size()) return; // allow only 1 highlight element simultaneously
+  const box = element.tagName === "svg" ? getBBox(element) : element.getBBox();
   const transform = element.getAttribute("transform") || null;
   const enter = d3.transition().duration(1000).ease(d3.easeBounceOut);
   const exit = d3.transition().duration(500).ease(d3.easeLinear);
 
-  const highlight = debug.append("rect").attr("x", box.x).attr("y", box.y).attr("width", box.width).attr("height", box.height).attr("transform", transform);
+  const highlight = debug
+    .append("rect")
+    .attr("x", box.x)
+    .attr("y", box.y)
+    .attr("width", box.width)
+    .attr("height", box.height);
+  highlight.classed("highlighted", 1).attr("transform", transform);
+  highlight
+    .transition(enter)
+    .style("outline-offset", "0px")
+    .transition(exit)
+    .style("outline-color", "transparent")
+    .delay(1000)
+    .remove();
 
-  highlight.classed("highlighted", 1).transition(enter).style("outline-offset", "0px").transition(exit).style("outline-color", "transparent").delay(1000).remove();
-
-  const tr = parseTransform(transform);
-  let x = box.x + box.width / 2;
-  if (tr[0]) x += tr[0];
-  let y = box.y + box.height / 2;
-  if (tr[1]) y += tr[1];
-  zoomTo(x, y, scale > 2 ? scale : 3, 1600);
+  if (zoom) {
+    const tr = parseTransform(transform);
+    let x = box.x + box.width / 2;
+    if (tr[0]) x += tr[0];
+    let y = box.y + box.height / 2;
+    if (tr[1]) y += tr[1];
+    zoomTo(x, y, scale > 2 ? scale : zoom, 1600);
+  }
 }
 
 function selectIcon(initial, callback) {
   if (!callback) return;
   $("#iconSelector").dialog();
 
-  const table = document.getElementById("iconTable");
-  const input = document.getElementById("iconInput");
+  const table = byId("iconTable");
+  const input = byId("iconInput");
   input.value = initial;
 
   if (!table.innerHTML) {
@@ -919,24 +1168,66 @@ function selectIcon(initial, callback) {
       const cell = row.insertCell(i % 17);
       cell.innerHTML = icons[i];
     }
+
+    // find external images used as icons and show them
+    const externalResources = new Set();
+    const isExternal = url => url.startsWith("http") || url.startsWith("data:image");
+
+    options.military.forEach(unit => {
+      if (isExternal(unit.icon)) externalResources.add(unit.icon);
+    });
+
+    pack.states.forEach(state => {
+      state?.military?.forEach(regiment => {
+        if (isExternal(regiment.icon)) externalResources.add(regiment.icon);
+      });
+    });
+
+    externalResources.forEach(addExternalImage);
   }
+
+  input.oninput = () => callback(input.value);
 
   table.onclick = e => {
     if (e.target.tagName === "TD") {
-      input.value = e.target.innerHTML;
+      input.value = e.target.textContent;
       callback(input.value);
     }
   };
+
   table.onmouseover = e => {
-    if (e.target.tagName === "TD") tip(`Click to select ${e.target.innerHTML} icon`);
+    if (e.target.tagName === "TD") tip(`Click to select ${e.target.textContent} icon`);
   };
+
+  function addExternalImage(url) {
+    const addedIcons = byId("addedIcons");
+    const image = document.createElement("div");
+    image.style.cssText = `width: 2.2em; height: 2.2em; background-size: cover; background-image: url(${url})`;
+    addedIcons.appendChild(image);
+    image.onclick = () => callback(url);
+  }
+
+  byId("addImage").onclick = function () {
+    const input = this.previousElementSibling;
+    const ulr = input.value;
+    if (!ulr) return tip("Enter image URL to add", false, "error", 4000);
+    if (!ulr.match(/^((http|https):\/\/)|data\:image\//)) return tip("Enter valid URL", false, "error", 4000);
+    addExternalImage(ulr);
+    callback(ulr);
+    input.value = "";
+  };
+
+  byId("addedIcons")
+    .querySelectorAll("div")
+    .forEach(div => {
+      div.onclick = () => callback(div.style.backgroundImage.slice(5, -2));
+    });
 
   $("#iconSelector").dialog({
     width: fitContent(),
     title: "Select Icon",
     buttons: {
       Apply: function () {
-        callback(input.value || "⠀");
         $(this).dialog("close");
       },
       Close: function () {
@@ -947,15 +1238,73 @@ function selectIcon(initial, callback) {
   });
 }
 
+function getAreaUnit(squareMark = "²") {
+  return byId("areaUnit").value === "square" ? byId("distanceUnitInput").value + squareMark : byId("areaUnit").value;
+}
+
+function getArea(rawArea) {
+  return rawArea * distanceScale ** 2;
+}
+
+function confirmationDialog(options) {
+  const {
+    title = "Confirm action",
+    message = "Are you sure you want to continue? <br>The action cannot be reverted",
+    cancel = "Cancel",
+    confirm = "Continue",
+    onCancel,
+    onConfirm
+  } = options;
+
+  const buttons = {
+    [confirm]: function () {
+      if (onConfirm) onConfirm();
+      $(this).dialog("close");
+    },
+    [cancel]: function () {
+      if (onCancel) onCancel();
+      $(this).dialog("close");
+    }
+  };
+
+  byId("alertMessage").innerHTML = message;
+  $("#alert").dialog({resizable: false, title, buttons});
+}
+
+// add and register event listeners to clean up on editor closure
+function listen(element, event, handler) {
+  element.on(event, handler);
+  return () => element.off(event, handler);
+}
+
 // Calls the refresh functionality on all editors currently open.
 function refreshAllEditors() {
   TIME && console.time("refreshAllEditors");
-  if (document.getElementById("culturesEditorRefresh").offsetParent) culturesEditorRefresh.click();
-  if (document.getElementById("biomesEditorRefresh").offsetParent) biomesEditorRefresh.click();
-  if (document.getElementById("diplomacyEditorRefresh").offsetParent) diplomacyEditorRefresh.click();
-  if (document.getElementById("provincesEditorRefresh").offsetParent) provincesEditorRefresh.click();
-  if (document.getElementById("religionsEditorRefresh").offsetParent) religionsEditorRefresh.click();
-  if (document.getElementById("statesEditorRefresh").offsetParent) statesEditorRefresh.click();
-  if (document.getElementById("zonesEditorRefresh").offsetParent) zonesEditorRefresh.click();
+  if (byId("culturesEditorRefresh")?.offsetParent) culturesEditorRefresh.click();
+  if (byId("biomesEditorRefresh")?.offsetParent) biomesEditorRefresh.click();
+  if (byId("diplomacyEditorRefresh")?.offsetParent) diplomacyEditorRefresh.click();
+  if (byId("provincesEditorRefresh")?.offsetParent) provincesEditorRefresh.click();
+  if (byId("religionsEditorRefresh")?.offsetParent) religionsEditorRefresh.click();
+  if (byId("statesEditorRefresh")?.offsetParent) statesEditorRefresh.click();
+  if (byId("zonesEditorRefresh")?.offsetParent) zonesEditorRefresh.click();
   TIME && console.timeEnd("refreshAllEditors");
+}
+
+// dynamically loaded editors
+async function editStates() {
+  if (customization) return;
+  const Editor = await import("../dynamic/editors/states-editor.js?v=1.108.1");
+  Editor.open();
+}
+
+async function editCultures() {
+  if (customization) return;
+  const Editor = await import("../dynamic/editors/cultures-editor.js?v=1.105.23");
+  Editor.open();
+}
+
+async function editReligions() {
+  if (customization) return;
+  const Editor = await import("../dynamic/editors/religions-editor.js?v=1.104.0");
+  Editor.open();
 }

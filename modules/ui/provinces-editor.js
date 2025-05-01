@@ -8,7 +8,7 @@ function editProvinces() {
   if (layerIsOn("toggleCultures")) toggleCultures();
 
   provs.selectAll("text").call(d3.drag().on("drag", dragLabel)).classed("draggable", true);
-  const body = document.getElementById("provincesBodySection");
+  const body = byId("provincesBodySection");
   refreshProvincesEditor();
 
   if (modules.editProvinces) return;
@@ -23,37 +23,42 @@ function editProvinces() {
   });
 
   // add listeners
-  document.getElementById("provincesEditorRefresh").addEventListener("click", refreshProvincesEditor);
-  document.getElementById("provincesEditStyle").addEventListener("click", () => editStyle("provs"));
-  document.getElementById("provincesFilterState").addEventListener("change", provincesEditorAddLines);
-  document.getElementById("provincesPercentage").addEventListener("click", togglePercentageMode);
-  document.getElementById("provincesChart").addEventListener("click", showChart);
-  document.getElementById("provincesToggleLabels").addEventListener("click", toggleLabels);
-  document.getElementById("provincesExport").addEventListener("click", downloadProvincesData);
-  document.getElementById("provincesRemoveAll").addEventListener("click", removeAllProvinces);
-  document.getElementById("provincesManually").addEventListener("click", enterProvincesManualAssignent);
-  document.getElementById("provincesManuallyApply").addEventListener("click", applyProvincesManualAssignent);
-  document.getElementById("provincesManuallyCancel").addEventListener("click", () => exitProvincesManualAssignment());
-  document.getElementById("provincesAdd").addEventListener("click", enterAddProvinceMode);
-  document.getElementById("provincesRecolor").addEventListener("click", recolorProvinces);
+  byId("provincesEditorRefresh").on("click", refreshProvincesEditor);
+  byId("provincesEditStyle").on("click", () => editStyle("provs"));
+  byId("provincesFilterState").on("change", provincesEditorAddLines);
+  byId("provincesPercentage").on("click", togglePercentageMode);
+  byId("provincesChart").on("click", showChart);
+  byId("provincesToggleLabels").on("click", toggleLabels);
+  byId("provincesExport").on("click", downloadProvincesData);
+  byId("provincesRemoveAll").on("click", removeAllProvinces);
+  byId("provincesManually").on("click", enterProvincesManualAssignent);
+  byId("provincesManuallyApply").on("click", applyProvincesManualAssignent);
+  byId("provincesManuallyCancel").on("click", () => exitProvincesManualAssignment());
+  byId("provincesRelease").on("click", triggerProvincesRelease);
+  byId("provincesAdd").on("click", enterAddProvinceMode);
+  byId("provincesRecolor").on("click", recolorProvinces);
 
-  body.addEventListener("click", function (ev) {
+  body.on("click", function (ev) {
     if (customization) return;
     const el = ev.target,
       cl = el.classList,
       line = el.parentNode,
       p = +line.dataset.id;
-    if (cl.contains("fillRect")) changeFill(el);
+    const stateId = pack.provinces[p].state;
+
+    if (el.tagName === "FILL-BOX") changeFill(el);
     else if (cl.contains("name")) editProvinceName(p);
     else if (cl.contains("coaIcon")) editEmblem("province", "provinceCOA" + p, pack.provinces[p]);
     else if (cl.contains("icon-star-empty")) capitalZoomIn(p);
     else if (cl.contains("icon-flag-empty")) triggerIndependencePromps(p);
+    else if (cl.contains("icon-dot-circled")) overviewBurgs({stateId});
     else if (cl.contains("culturePopulation")) changePopulation(p);
     else if (cl.contains("icon-pin")) toggleFog(p, cl);
     else if (cl.contains("icon-trash-empty")) removeProvince(p);
+    else if (cl.contains("icon-lock") || cl.contains("icon-lock-open")) updateLockStatus(p, cl);
   });
 
-  body.addEventListener("change", function (ev) {
+  body.on("change", function (ev) {
     const el = ev.target,
       cl = el.classList,
       line = el.parentNode,
@@ -68,9 +73,8 @@ function editProvinces() {
   }
 
   function collectStatistics() {
-    const cells = pack.cells,
-      provinces = pack.provinces,
-      burgs = pack.burgs;
+    const {cells, provinces, burgs} = pack;
+
     provinces.forEach(p => {
       if (!p.i || p.removed) return;
       p.area = p.rural = p.urban = 0;
@@ -96,7 +100,7 @@ function editProvinces() {
   }
 
   function updateFilter() {
-    const stateFilter = document.getElementById("provincesFilterState");
+    const stateFilter = byId("provincesFilterState");
     const selectedState = stateFilter.value || 1;
     stateFilter.options.length = 0; // remove all options
     stateFilter.options.add(new Option(`all`, -1, false, selectedState == -1));
@@ -104,61 +108,95 @@ function editProvinces() {
     statesSorted.forEach(s => stateFilter.options.add(new Option(s.name, s.i, false, s.i == selectedState)));
   }
 
-  // add line for each state
+  // add line for each province
   function provincesEditorAddLines() {
-    const unit = areaUnit.value === "square" ? " " + distanceUnitInput.value + "²" : " " + areaUnit.value;
-    const selectedState = +document.getElementById("provincesFilterState").value;
+    const unit = " " + getAreaUnit();
+    const selectedState = +byId("provincesFilterState").value;
     let filtered = pack.provinces.filter(p => p.i && !p.removed); // all valid burgs
     if (selectedState != -1) filtered = filtered.filter(p => p.state === selectedState); // filtered by state
     body.innerHTML = "";
-    let lines = "",
-      totalArea = 0,
-      totalPopulation = 0;
+
+    let lines = "";
+    let totalArea = 0;
+    let totalPopulation = 0;
+    let totalBurgs = 0;
 
     for (const p of filtered) {
-      const area = p.area * distanceScaleInput.value ** 2;
+      const area = getArea(p.area);
       totalArea += area;
       const rural = p.rural * populationRate;
       const urban = p.urban * populationRate * urbanization;
       const population = rn(rural + urban);
-      const populationTip = `Total population: ${si(population)}; Rural population: ${si(rural)}; Urban population: ${si(urban)}`;
+      const populationTip = `Total population: ${si(population)}; Rural population: ${si(
+        rural
+      )}; Urban population: ${si(urban)}`;
       totalPopulation += population;
+      totalBurgs += p.burgs.length;
 
       const stateName = pack.states[p.state].name;
       const capital = p.burg ? pack.burgs[p.burg].name : "";
       const separable = p.burg && p.burg !== pack.states[p.state].capital;
       const focused = defs.select("#fog #focusProvince" + p.i).size();
       COArenderer.trigger("provinceCOA" + p.i, p.coa);
-      lines += `<div class="states" data-id=${p.i} data-name="${p.name}" data-form="${p.formName}" data-color="${p.color}" data-capital="${capital}" data-state="${stateName}" data-area=${area} data-population=${population}>
-        <svg data-tip="Province fill style. Click to change" width=".9em" height=".9em" style="margin-bottom:-1px"><rect x="0" y="0" width="100%" height="100%" fill="${p.color}" class="fillRect pointer"></svg>
-        <input data-tip="Province name. Click to change" class="name pointer" value="${p.name}" readonly>
-        <svg data-tip="Click to show and edit province emblem" class="coaIcon hide" viewBox="0 0 200 200"><use href="#provinceCOA${p.i}"></use></svg>
-        <input data-tip="Province form name. Click to change" class="name pointer hide" value="${p.formName}" readonly>
-        <span data-tip="Province capital. Click to zoom into view" class="icon-star-empty pointer hide ${p.burg ? "" : "placeholder"}"></span>
-        <select data-tip="Province capital. Click to select from burgs within the state. No capital means the province is governed from the state capital" class="cultureBase hide ${p.burgs.length ? "" : "placeholder"}">${p.burgs.length ? getCapitalOptions(p.burgs, p.burg) : ""}</select>
+      lines += /* html */ `<div
+        class="states"
+        data-id=${p.i}
+        data-name="${p.name}"
+        data-form="${p.formName}"
+        data-color="${p.color}"
+        data-capital="${capital}"
+        data-state="${stateName}"
+        data-area=${area}
+        data-population=${population}
+        data-burgs=${p.burgs.length}
+      >
+        <fill-box fill="${p.color}"></fill-box>
+        <input data-tip="Province name. Click to change" class="name pointer" value="${p.name}" readonly />
+        <svg data-tip="Click to show and edit province emblem" class="coaIcon pointer hide" viewBox="0 0 200 200"><use href="#provinceCOA${
+          p.i
+        }"></use></svg>
+        <input data-tip="Province form name. Click to change" class="name pointer hide" value="${
+          p.formName
+        }" readonly />
+        <span data-tip="Province capital. Click to zoom into view" class="icon-star-empty pointer hide ${
+          p.burg ? "" : "placeholder"
+        }"></span>
+        <select
+          data-tip="Province capital. Click to select from burgs within the state. No capital means the province is governed from the state capital"
+          class="cultureBase hide ${p.burgs.length ? "" : "placeholder"}"
+        >
+          ${p.burgs.length ? getCapitalOptions(p.burgs, p.burg) : ""}
+        </select>
         <input data-tip="Province owner" class="provinceOwner" value="${stateName}" disabled">
+        <span data-tip="Click to overview province burgs" style="padding-right: 1px" class="icon-dot-circled pointer hide"></span>
+        <div data-tip="Burgs count" class="provinceBurgs hide">${p.burgs.length}</div>
         <span data-tip="Province area" style="padding-right: 4px" class="icon-map-o hide"></span>
         <div data-tip="Province area" class="biomeArea hide">${si(area) + unit}</div>
         <span data-tip="${populationTip}" class="icon-male hide"></span>
         <div data-tip="${populationTip}" class="culturePopulation hide">${si(population)}</div>
-        <span data-tip="Declare province independence (turn non-capital province with burgs into a new state)" class="icon-flag-empty ${separable ? "" : "placeholder"} hide"></span>
+        <span
+          data-tip="Declare province independence (turn non-capital province with burgs into a new state)"
+          class="icon-flag-empty ${separable ? "" : "placeholder"} hide"
+        ></span>
         <span data-tip="Toggle province focus" class="icon-pin ${focused ? "" : " inactive"} hide"></span>
+        <span data-tip="Lock the province" class="icon-lock${p.lock ? "" : "-open"} hide"></span>
         <span data-tip="Remove the province" class="icon-trash-empty hide"></span>
       </div>`;
     }
     body.innerHTML = lines;
 
     // update footer
-    provincesFooterNumber.innerHTML = filtered.length;
-    provincesFooterArea.innerHTML = filtered.length ? si(totalArea / filtered.length) + unit : 0 + unit;
-    provincesFooterPopulation.innerHTML = filtered.length ? si(totalPopulation / filtered.length) : 0;
-    provincesFooterArea.dataset.area = totalArea;
-    provincesFooterPopulation.dataset.population = totalPopulation;
+    byId("provincesFooterNumber").innerHTML = filtered.length;
+    byId("provincesFooterBurgs").innerHTML = totalBurgs;
+    byId("provincesFooterArea").innerHTML = filtered.length ? si(totalArea / filtered.length) + unit : 0 + unit;
+    byId("provincesFooterPopulation").innerHTML = filtered.length ? si(totalPopulation / filtered.length) : 0;
+    byId("provincesFooterArea").dataset.area = totalArea;
+    byId("provincesFooterPopulation").dataset.population = totalPopulation;
 
     body.querySelectorAll("div.states").forEach(el => {
-      el.addEventListener("click", selectProvinceOnLineClick);
-      el.addEventListener("mouseenter", ev => provinceHighlightOn(ev));
-      el.addEventListener("mouseleave", ev => provinceHighlightOff(ev));
+      el.on("click", selectProvinceOnLineClick);
+      el.on("mouseenter", ev => provinceHighlightOn(ev));
+      el.on("mouseleave", ev => provinceHighlightOff(ev));
     });
 
     if (body.dataset.type === "percentage") {
@@ -171,7 +209,9 @@ function editProvinces() {
 
   function getCapitalOptions(burgs, capital) {
     let options = "";
-    burgs.forEach(b => (options += `<option ${b === capital ? "selected" : ""} value="${b}">${pack.burgs[b].name}</option>`));
+    burgs.forEach(
+      b => (options += `<option ${b === capital ? "selected" : ""} value="${b}">${pack.burgs[b].name}</option>`)
+    );
     return options;
   }
 
@@ -206,14 +246,14 @@ function editProvinces() {
 
   function changeFill(el) {
     const currentFill = el.getAttribute("fill");
-    const p = +el.parentNode.parentNode.dataset.id;
+    const p = +el.parentNode.dataset.id;
 
-    const callback = function (fill) {
-      el.setAttribute("fill", fill);
-      pack.provinces[p].color = fill;
+    const callback = newFill => {
+      el.fill = newFill;
+      pack.provinces[p].color = newFill;
       const g = provs.select("#provincesBody");
-      g.select("#province" + p).attr("fill", fill);
-      g.select("#province-gap" + p).attr("stroke", fill);
+      g.select("#province" + p).attr("fill", newFill);
+      g.select("#province-gap" + p).attr("stroke", newFill);
     };
 
     openPicker(currentFill, callback);
@@ -222,74 +262,68 @@ function editProvinces() {
   function capitalZoomIn(p) {
     const capital = pack.provinces[p].burg;
     const l = burgLabels.select("[data-id='" + capital + "']");
-    const x = +l.attr("x"),
-      y = +l.attr("y");
+    const x = +l.attr("x");
+    const y = +l.attr("y");
     zoomTo(x, y, 8, 2000);
   }
 
   function triggerIndependencePromps(p) {
-    alertMessage.innerHTML = "Are you sure you want to declare province independence? <br>It will turn province into a new state";
-    $("#alert").dialog({
-      resizable: false,
+    confirmationDialog({
       title: "Declare independence",
-      buttons: {
-        Declare: function () {
-          declareProvinceIndependence(p);
-          $(this).dialog("close");
-        },
-        Cancel: function () {
-          $(this).dialog("close");
-        }
+      message: "Are you sure you want to declare province independence? <br>It will turn province into a new state",
+      confirm: "Declare",
+      onConfirm: () => {
+        const [oldStateId, newStateId] = declareProvinceIndependence(p);
+        updateStatesPostRelease([oldStateId], [newStateId]);
       }
     });
   }
 
-  function declareProvinceIndependence(p) {
-    const states = pack.states,
-      provinces = pack.provinces,
-      cells = pack.cells;
-    if (provinces[p].burgs.some(b => pack.burgs[b].capital)) {
-      tip("Cannot declare independence of a province having capital burg. Please change capital first", false, "error");
-      return;
-    }
+  function declareProvinceIndependence(provinceId) {
+    const {states, provinces, cells, burgs} = pack;
+    const province = provinces[provinceId];
+    const {name, burg: burgId, burgs: provinceBurgs} = province;
 
-    const oldState = pack.provinces[p].state;
-    const newState = pack.states.length;
+    if (provinceBurgs.some(b => burgs[b].capital))
+      return tip(
+        "Cannot declare independence of a province having capital burg. Please change capital first",
+        false,
+        "error"
+      );
+    if (!burgId) return tip("Cannot declare independence of a province without burg", false, "error");
+
+    const oldStateId = province.state;
+    const newStateId = states.length;
 
     // turn province burg into a capital
-    const burg = provinces[p].burg;
-    if (!burg) return;
-    pack.burgs[burg].capital = 1;
-    moveBurgToGroup(burg, "cities");
+    burgs[burgId].capital = 1;
+    moveBurgToGroup(burgId, "cities");
 
     // move all burgs to a new state
-    provinces[p].burgs.forEach(b => (pack.burgs[b].state = newState));
+    province.burgs.forEach(b => (burgs[b].state = newStateId));
 
-    // difine new state attributes
-    const center = pack.burgs[burg].cell;
-    const culture = pack.burgs[burg].culture;
-    const name = provinces[p].name;
+    // define new state attributes
+    const {cell: center, culture} = burgs[burgId];
     const color = getRandomColor();
-
-    const coa = provinces[p].coa;
-    const coaEl = document.getElementById("provinceCOA" + p);
-    if (coaEl) coaEl.id = "stateCOA" + newState;
-    emblems.select(`#provinceEmblems > use[data-i='${p}']`).remove();
+    const coa = province.coa;
+    const coaEl = byId("provinceCOA" + provinceId);
+    if (coaEl) coaEl.id = "stateCOA" + newStateId;
+    emblems.select(`#provinceEmblems > use[data-i='${provinceId}']`).remove();
 
     // update cells
     cells.i
-      .filter(i => cells.province[i] === p)
+      .filter(i => cells.province[i] === provinceId)
       .forEach(i => {
         cells.province[i] = 0;
-        cells.state[i] = newState;
+        cells.state[i] = newStateId;
       });
 
     // update diplomacy and reverse relations
     const diplomacy = states.map(s => {
       if (!s.i || s.removed) return "x";
-      let relations = states[oldState].diplomacy[s.i]; // relations between Nth state and old overlord
-      if (s.i === oldState) relations = "Enemy";
-      // new state is Enemy to its old overlord
+      let relations = states[oldStateId].diplomacy[s.i]; // relations between Nth state and old overlord
+      // new state is Enemy to its old owner
+      if (s.i === oldStateId) relations = "Enemy";
       else if (relations === "Ally") relations = "Suspicion";
       else if (relations === "Friendly") relations = "Suspicion";
       else if (relations === "Suspicion") relations = "Neutral";
@@ -301,28 +335,55 @@ function editProvinces() {
       return relations;
     });
     diplomacy.push("x");
-    states[0].diplomacy.push([`Independance declaration`, `${name} declared its independance from ${states[oldState].name}`]);
+    states[0].diplomacy.push([
+      `Independance declaration`,
+      `${name} declared its independance from ${states[oldStateId].name}`
+    ]);
 
     // create new state
-    states.push({i: newState, name, diplomacy, provinces: [], color, expansionism: 0.5, capital: burg, type: "Generic", center, culture, military: [], alert: 1, coa});
-    BurgsAndStates.collectStatistics();
-    BurgsAndStates.defineStateForms([newState]);
-
-    if (layerIsOn("toggleProvinces")) toggleProvinces();
-    if (!layerIsOn("toggleStates")) toggleStates();
-    else drawStates();
-    if (!layerIsOn("toggleBorders")) toggleBorders();
-    else drawBorders();
-    BurgsAndStates.drawStateLabels([newState, oldState]);
+    states.push({
+      i: newStateId,
+      name,
+      diplomacy,
+      provinces: [],
+      color,
+      expansionism: 0.5,
+      capital: burgId,
+      type: "Generic",
+      center,
+      culture,
+      military: [],
+      alert: 1,
+      coa
+    });
 
     // remove old province
-    unfog("focusProvince" + p);
-    if (states[oldState].provinces.includes(p)) states[oldState].provinces.splice(states[oldState].provinces.indexOf(p), 1);
-    provinces[p] = {i: p, removed: true};
+    states[oldStateId].provinces = states[oldStateId].provinces.filter(p => p !== provinceId);
+    provinces[provinceId] = {i: provinceId, removed: true};
 
-    // draw emblem
-    COArenderer.add("state", newState, coa, pack.states[newState].pole[0], pack.states[newState].pole[1]);
+    return [oldStateId, newStateId];
+  }
 
+  function updateStatesPostRelease(oldStates, newStates) {
+    const allStates = unique([...oldStates, ...newStates]);
+
+    BurgsAndStates.getPoles();
+    BurgsAndStates.collectStatistics();
+    BurgsAndStates.defineStateForms(newStates);
+    drawStateLabels(allStates);
+
+    // redraw emblems
+    allStates.forEach(stateId => {
+      emblems.select(`#stateEmblems > use[data-i='${stateId}']`)?.remove();
+      const {coa, pole} = pack.states[stateId];
+      COArenderer.add("state", stateId, coa, ...pole);
+    });
+
+    layerIsOn("toggleProvinces") && toggleProvinces();
+    layerIsOn("toggleStates") ? drawStates() : toggleStates();
+    layerIsOn("toggleBorders") ? drawBorders() : toggleBorders();
+
+    unfog();
     closeDialogs();
     editStates();
   }
@@ -339,10 +400,13 @@ function editProvinces() {
     const total = rural + urban;
     const l = n => Number(n).toLocaleString();
 
-    alertMessage.innerHTML = `
-    Rural: <input type="number" min=0 step=1 id="ruralPop" value=${rural} style="width:6em">
-    Urban: <input type="number" min=0 step=1 id="urbanPop" value=${urban} style="width:6em" ${p.burgs.length ? "" : "disabled"}>
-    <p>Total population: ${l(total)} ⇒ <span id="totalPop">${l(total)}</span> (<span id="totalPopPerc">100</span>%)</p>`;
+    alertMessage.innerHTML = /* html */ ` Rural: <input type="number" min="0" step="1" id="ruralPop" value=${rural} style="width:6em" /> Urban:
+      <input type="number" min="0" step="1" id="urbanPop" value=${urban} style="width:6em" ${
+      p.burgs.length ? "" : "disabled"
+    } />
+      <p>Total population: ${l(total)} ⇒ <span id="totalPop">${l(
+      total
+    )}</span> (<span id="totalPopPerc">100</span>%)</p>`;
 
     const update = function () {
       const totalNew = ruralPop.valueAsNumber + urbanPop.valueAsNumber;
@@ -391,6 +455,7 @@ function editProvinces() {
         p.burgs.forEach(b => (pack.burgs[b].population = population));
       }
 
+      if (layerIsOn("togglePopulation")) drawPopulation();
       refreshProvincesEditor();
     }
   }
@@ -403,7 +468,7 @@ function editProvinces() {
   }
 
   function removeProvince(p) {
-    alertMessage.innerHTML = `Are you sure you want to remove the province? <br>This action cannot be reverted`;
+    alertMessage.innerHTML = /* html */ `Are you sure you want to remove the province? <br />This action cannot be reverted`;
     $("#alert").dialog({
       resizable: false,
       title: "Remove province",
@@ -419,7 +484,7 @@ function editProvinces() {
           unfog("focusProvince" + p);
 
           const coaId = "provinceCOA" + p;
-          if (document.getElementById(coaId)) document.getElementById(coaId).remove();
+          if (byId(coaId)) byId(coaId).remove();
           emblems.select(`#provinceEmblems > use[data-i='${p}']`).remove();
 
           pack.provinces[p] = {i: p, removed: true};
@@ -427,8 +492,7 @@ function editProvinces() {
           const g = provs.select("#provincesBody");
           g.select("#province" + p).remove();
           g.select("#province-gap" + p).remove();
-          if (!layerIsOn("toggleBorders")) toggleBorders();
-          else drawBorders();
+          if (layerIsOn("toggleBorders")) drawBorders();
           refreshProvincesEditor();
           $(this).dialog("close");
         },
@@ -441,10 +505,13 @@ function editProvinces() {
 
   function editProvinceName(province) {
     const p = pack.provinces[province];
-    document.getElementById("provinceNameEditor").dataset.province = province;
-    document.getElementById("provinceNameEditorShort").value = p.name;
+    byId("provinceNameEditor").dataset.province = province;
+    byId("provinceNameEditorShort").value = p.name;
     applyOption(provinceNameEditorSelectForm, p.formName);
-    document.getElementById("provinceNameEditorFull").value = p.fullName;
+    byId("provinceNameEditorFull").value = p.fullName;
+
+    const cultureId = pack.cells.culture[p.center];
+    byId("provinceCultureDisplay").innerText = pack.cultures[cultureId].name;
 
     $("#provinceNameEditor").dialog({
       resizable: false,
@@ -465,22 +532,22 @@ function editProvinces() {
     modules.editProvinceName = true;
 
     // add listeners
-    document.getElementById("provinceNameEditorShortCulture").addEventListener("click", regenerateShortNameCuture);
-    document.getElementById("provinceNameEditorShortRandom").addEventListener("click", regenerateShortNameRandom);
-    document.getElementById("provinceNameEditorAddForm").addEventListener("click", addCustomForm);
-    document.getElementById("provinceNameEditorFullRegenerate").addEventListener("click", regenerateFullName);
+    byId("provinceNameEditorShortCulture").on("click", regenerateShortNameCulture);
+    byId("provinceNameEditorShortRandom").on("click", regenerateShortNameRandom);
+    byId("provinceNameEditorAddForm").on("click", addCustomForm);
+    byId("provinceNameEditorFullRegenerate").on("click", regenerateFullName);
 
-    function regenerateShortNameCuture() {
+    function regenerateShortNameCulture() {
       const province = +provinceNameEditor.dataset.province;
       const culture = pack.cells.culture[pack.provinces[province].center];
       const name = Names.getState(Names.getCultureShort(culture), culture);
-      document.getElementById("provinceNameEditorShort").value = name;
+      byId("provinceNameEditorShort").value = name;
     }
 
     function regenerateShortNameRandom() {
       const base = rand(nameBases.length - 1);
       const name = Names.getState(Names.getBase(base), undefined, base);
-      document.getElementById("provinceNameEditorShort").value = name;
+      byId("provinceNameEditorShort").value = name;
     }
 
     function addCustomForm() {
@@ -492,9 +559,9 @@ function editProvinces() {
     }
 
     function regenerateFullName() {
-      const short = document.getElementById("provinceNameEditorShort").value;
-      const form = document.getElementById("provinceNameEditorSelectForm").value;
-      document.getElementById("provinceNameEditorFull").value = getFullName();
+      const short = byId("provinceNameEditorShort").value;
+      const form = byId("provinceNameEditorSelectForm").value;
+      byId("provinceNameEditorFull").value = getFullName();
 
       function getFullName() {
         if (!form) return short;
@@ -504,9 +571,9 @@ function editProvinces() {
     }
 
     function applyNameChange(p) {
-      p.name = document.getElementById("provinceNameEditorShort").value;
-      p.formName = document.getElementById("provinceNameEditorSelectForm").value;
-      p.fullName = document.getElementById("provinceNameEditorFull").value;
+      p.name = byId("provinceNameEditorShort").value;
+      p.formName = byId("provinceNameEditorSelectForm").value;
+      p.fullName = byId("provinceNameEditorFull").value;
       provs.select("#provinceLabel" + p.i).text(p.name);
       refreshProvincesEditor();
     }
@@ -521,12 +588,15 @@ function editProvinces() {
   function togglePercentageMode() {
     if (body.dataset.type === "absolute") {
       body.dataset.type = "percentage";
+      const totalBurgs = +byId("provincesFooterBurgs").innerText;
       const totalArea = +provincesFooterArea.dataset.area;
       const totalPopulation = +provincesFooterPopulation.dataset.population;
 
       body.querySelectorAll(":scope > div").forEach(function (el) {
-        el.querySelector(".biomeArea").innerHTML = rn((+el.dataset.area / totalArea) * 100) + "%";
-        el.querySelector(".culturePopulation").innerHTML = rn((+el.dataset.population / totalPopulation) * 100) + "%";
+        const {cells, burgs, area, population} = el.dataset;
+        el.querySelector(".provinceBurgs").innerText = rn((+burgs / totalBurgs) * 100) + "%";
+        el.querySelector(".biomeArea").innerHTML = rn((+area / totalArea) * 100) + "%";
+        el.querySelector(".culturePopulation").innerHTML = rn((+population / totalPopulation) * 100) + "%";
       });
     } else {
       body.dataset.type = "absolute";
@@ -541,7 +611,17 @@ function editProvinces() {
     const provinces = pack.provinces
       .filter(p => p.i && !p.removed)
       .map(p => {
-        return {id: p.i + states.length - 1, i: p.i, state: p.state, color: p.color, name: p.name, fullName: p.fullName, area: p.area, urban: p.urban, rural: p.rural};
+        return {
+          id: p.i + states.length - 1,
+          i: p.i,
+          state: p.state,
+          color: p.color,
+          name: p.name,
+          fullName: p.fullName,
+          area: p.area,
+          urban: p.urban,
+          rural: p.rural
+        };
       });
     const data = states.concat(provinces);
     const root = d3
@@ -549,24 +629,30 @@ function editProvinces() {
       .parentId(d => d.state)(data)
       .sum(d => d.area);
 
-    const width = 300 + 300 * uiSizeOutput.value,
-      height = 90 + 90 * uiSizeOutput.value;
+    const width = 300 + 300 * uiSize.value,
+      height = 90 + 90 * uiSize.value;
     const margin = {top: 10, right: 10, bottom: 0, left: 10};
     const w = width - margin.left - margin.right;
     const h = height - margin.top - margin.bottom;
     const treeLayout = d3.treemap().size([w, h]).padding(2);
 
     // prepare svg
-    alertMessage.innerHTML = `<select id="provincesTreeType" style="display:block; margin-left:13px; font-size:11px">
+    alertMessage.innerHTML = /* html */ `<select id="provincesTreeType" style="display:block; margin-left:13px; font-size:11px">
       <option value="area" selected>Area</option>
       <option value="population">Total population</option>
       <option value="rural">Rural population</option>
       <option value="urban">Urban population</option>
     </select>`;
     alertMessage.innerHTML += `<div id='provinceInfo' class='chartInfo'>&#8205;</div>`;
-    const svg = d3.select("#alertMessage").insert("svg", "#provinceInfo").attr("id", "provincesTree").attr("width", width).attr("height", height).attr("font-size", "10px");
+    const svg = d3
+      .select("#alertMessage")
+      .insert("svg", "#provinceInfo")
+      .attr("id", "provincesTree")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("font-size", "10px");
     const graph = svg.append("g").attr("transform", `translate(10, 0)`);
-    document.getElementById("provincesTreeType").addEventListener("change", updateChart);
+    byId("provincesTreeType").on("change", updateChart);
 
     treeLayout(root);
 
@@ -584,20 +670,26 @@ function editProvinces() {
       const name = d.data.fullName;
       const state = pack.states[d.data.state].fullName;
 
-      const unit = areaUnit.value === "square" ? " " + distanceUnitInput.value + "²" : " " + areaUnit.value;
-      const area = d.data.area * distanceScaleInput.value ** 2 + unit;
+      const area = getArea(d.data.area) + " " + getAreaUnit();
       const rural = rn(d.data.rural * populationRate);
       const urban = rn(d.data.urban * populationRate * urbanization);
 
-      const value = provincesTreeType.value === "area" ? "Area: " + area : provincesTreeType.value === "rural" ? "Rural population: " + si(rural) : provincesTreeType.value === "urban" ? "Urban population: " + si(urban) : "Population: " + si(rural + urban);
+      const value =
+        provincesTreeType.value === "area"
+          ? "Area: " + area
+          : provincesTreeType.value === "rural"
+          ? "Rural population: " + si(rural)
+          : provincesTreeType.value === "urban"
+          ? "Urban population: " + si(urban)
+          : "Population: " + si(rural + urban);
 
-      provinceInfo.innerHTML = `${name}. ${state}. ${value}`;
+      provinceInfo.innerHTML = /* html */ `${name}. ${state}. ${value}`;
       provinceHighlightOn(ev);
     }
 
     function hideInfo(ev) {
       provinceHighlightOff(ev);
-      if (!document.getElementById("provinceInfo")) return;
+      if (!byId("provinceInfo")) return;
       provinceInfo.innerHTML = "&#8205;";
       d3.select(ev.target).select("rect").classed("selected", 0);
     }
@@ -614,6 +706,7 @@ function editProvinces() {
 
     node
       .append("text")
+      .attr("text-rendering", "optimizeSpeed")
       .attr("dx", ".2em")
       .attr("dy", "1em")
       .attr("x", d => d.x0)
@@ -637,7 +730,14 @@ function editProvinces() {
     }
 
     function updateChart() {
-      const value = this.value === "area" ? d => d.area : this.value === "rural" ? d => d.rural : this.value === "urban" ? d => d.urban : d => d.rural + d.urban;
+      const value =
+        this.value === "area"
+          ? d => d.area
+          : this.value === "rural"
+          ? d => d.rural
+          : this.value === "urban"
+          ? d => d.urban
+          : d => d.rural + d.urban;
 
       root.sum(value);
       node.data(treeLayout(root).leaves());
@@ -681,6 +781,34 @@ function editProvinces() {
     provs.selectAll("text").call(d3.drag().on("drag", dragLabel)).classed("draggable", true);
   }
 
+  function triggerProvincesRelease() {
+    confirmationDialog({
+      title: "Release provinces",
+      message: `Are you sure you want to release all provinces?
+          </br>It will turn all separable provinces into independent states.
+          </br>Capital province and provinces without any burgs will state as they are`,
+      confirm: "Release",
+      onConfirm: () => {
+        const oldStateIds = [];
+        const newStateIds = [];
+
+        body.querySelectorAll(":scope > div").forEach(el => {
+          const provinceId = +el.dataset.id;
+          const province = pack.provinces[provinceId];
+          if (!province.burg) return;
+          if (province.burg === pack.states[province.state].capital) return;
+          if (province.burgs.some(burgId => pack.burgs[burgId].capital)) return;
+
+          const [oldStateId, newStateId] = declareProvinceIndependence(provinceId);
+          oldStateIds.push(oldStateId);
+          newStateIds.push(newStateId);
+        });
+
+        updateStatesPostRelease(unique(oldStateIds), newStateIds);
+      }
+    });
+  }
+
   function enterProvincesManualAssignent() {
     if (!layerIsOn("toggleProvinces")) toggleProvinces();
     if (!layerIsOn("toggleBorders")) toggleBorders();
@@ -690,11 +818,17 @@ function editProvinces() {
     stateBorders.select("path").attr("stroke", "#000").attr("stroke-width", 1.2);
 
     customization = 11;
-    provs.select("g#provincesBody").append("g").attr("id", "temp");
-    provs.select("g#provincesBody").append("g").attr("id", "centers").attr("fill", "none").attr("stroke", "#ff0000").attr("stroke-width", 1);
+    provs.select("g#provincesBody").append("g").attr("id", "temp").attr("stroke-width", 0.3);
+    provs
+      .select("g#provincesBody")
+      .append("g")
+      .attr("id", "centers")
+      .attr("fill", "none")
+      .attr("stroke", "#ff0000")
+      .attr("stroke-width", 1);
 
     document.querySelectorAll("#provincesBottom > *").forEach(el => (el.style.display = "none"));
-    document.getElementById("provincesManuallyButtons").style.display = "inline-block";
+    byId("provincesManuallyButtons").style.display = "inline-block";
 
     provincesEditor.querySelectorAll(".hide").forEach(el => el.classList.add("hidden"));
     provincesHeader.querySelector("div[data-sortby='state']").style.left = "7.7em";
@@ -703,7 +837,11 @@ function editProvinces() {
     $("#provincesEditor").dialog({position: {my: "right top", at: "right-10 top+10", of: "svg", collision: "fit"}});
 
     tip("Click on a province to select, drag the circle to change province", true);
-    viewbox.style("cursor", "crosshair").on("click", selectProvinceOnMapClick).call(d3.drag().on("start", dragBrush)).on("touchmove mousemove", moveBrush);
+    viewbox
+      .style("cursor", "crosshair")
+      .on("click", selectProvinceOnMapClick)
+      .call(d3.drag().on("start", dragBrush))
+      .on("touchmove mousemove", moveBrush);
 
     body.querySelector("div").classList.add("selected");
     selectProvince(+body.querySelector("div").dataset.id);
@@ -743,14 +881,14 @@ function editProvinces() {
   }
 
   function dragBrush() {
-    const r = +provincesManuallyBrush.value;
+    const r = +provincesBrush.value;
 
     d3.event.on("drag", () => {
       if (!d3.event.dx && !d3.event.dy) return;
       const p = d3.mouse(this);
       moveCircle(p[0], p[1], r);
 
-      const found = r > 5 ? findAll(p[0], p[1], r) : [findCell(p[0], p[1], r)];
+      const found = r > 5 ? findAll(p[0], p[1], r) : [findCell(p[0], p[1])];
       const selection = found.filter(isLand);
       if (selection) changeForSelection(selection);
     });
@@ -774,7 +912,11 @@ function editProvinces() {
       if (i === pack.provinces[provinceOld].center) {
         const center = centers.select("polygon[data-center='" + i + "']");
         if (!center.size()) centers.append("polygon").attr("data-center", i).attr("points", getPackPolygon(i));
-        tip("Province center cannot be assigned to a different region. Please remove the province first", false, "error");
+        tip(
+          "Province center cannot be assigned to a different region. Please remove the province first",
+          false,
+          "error"
+        );
         return;
       }
 
@@ -783,7 +925,13 @@ function editProvinces() {
         if (pack.cells.province[i] === provinceNew) exists.remove();
         else exists.attr("data-province", provinceNew).attr("fill", fill);
       } else {
-        temp.append("polygon").attr("points", getPackPolygon(i)).attr("data-cell", i).attr("data-province", provinceNew).attr("fill", fill).attr("stroke", "#555");
+        temp
+          .append("polygon")
+          .attr("points", getPackPolygon(i))
+          .attr("data-cell", i)
+          .attr("data-province", provinceNew)
+          .attr("fill", fill)
+          .attr("stroke", "#555");
       }
     });
   }
@@ -791,7 +939,7 @@ function editProvinces() {
   function moveBrush() {
     showMainTip();
     const point = d3.mouse(this);
-    const radius = +provincesManuallyBrush.value;
+    const radius = +provincesBrush.value;
     moveCircle(point[0], point[1], radius);
   }
 
@@ -804,10 +952,10 @@ function editProvinces() {
         pack.cells.province[i] = +this.dataset.province;
       });
 
-    if (!layerIsOn("toggleBorders")) toggleBorders();
-    else drawBorders();
-    if (!layerIsOn("toggleProvinces")) toggleProvinces();
-    else drawProvinces();
+    Provinces.getPoles();
+    if (layerIsOn("toggleBorders")) drawBorders();
+    if (layerIsOn("toggleProvinces")) drawProvinces();
+
     exitProvincesManualAssignment();
     refreshProvincesEditor();
   }
@@ -824,13 +972,14 @@ function editProvinces() {
     debug.selectAll("path.selected").remove();
 
     document.querySelectorAll("#provincesBottom > *").forEach(el => (el.style.display = "inline-block"));
-    document.getElementById("provincesManuallyButtons").style.display = "none";
+    byId("provincesManuallyButtons").style.display = "none";
 
     provincesEditor.querySelectorAll(".hide:not(.show)").forEach(el => el.classList.remove("hidden"));
     provincesHeader.querySelector("div[data-sortby='state']").style.left = "22em";
     provincesFooter.style.display = "block";
     body.querySelectorAll("div > input, select, span, svg").forEach(e => (e.style.pointerEvents = "all"));
-    if (!close) $("#provincesEditor").dialog({position: {my: "right top", at: "right-10 top+10", of: "svg", collision: "fit"}});
+    if (!close)
+      $("#provincesEditor").dialog({position: {my: "right top", at: "right-10 top+10", of: "svg", collision: "fit"}});
 
     restoreDefaultEvents();
     clearMainTip();
@@ -839,10 +988,8 @@ function editProvinces() {
   }
 
   function enterAddProvinceMode() {
-    if (this.classList.contains("pressed")) {
-      exitAddProvinceMode();
-      return;
-    }
+    if (this.classList.contains("pressed")) return exitAddProvinceMode();
+
     customization = 12;
     this.classList.add("pressed");
     tip("Click on the map to place a new province center", true);
@@ -851,24 +998,23 @@ function editProvinces() {
   }
 
   function addProvince() {
-    const cells = pack.cells,
-      provinces = pack.provinces;
+    const {cells, provinces} = pack;
     const point = d3.mouse(this);
     const center = findCell(point[0], point[1]);
-    if (cells.h[center] < 20) {
-      tip("You cannot place province into the water. Please click on a land cell", false, "error");
-      return;
-    }
+    if (cells.h[center] < 20)
+      return tip("You cannot place province into the water. Please click on a land cell", false, "error");
+
     const oldProvince = cells.province[center];
-    if (oldProvince && provinces[oldProvince].center === center) {
-      tip("The cell is already a center of a different province. Select other cell", false, "error");
-      return;
-    }
+    if (oldProvince && provinces[oldProvince].center === center)
+      return tip("The cell is already a center of a different province. Select other cell", false, "error");
+
     const state = cells.state[center];
-    if (!state) {
-      tip("You cannot create a province in neutral lands. Please assign this land to a state first", false, "error");
-      return;
-    }
+    if (!state)
+      return tip(
+        "You cannot create a province in neutral lands. Please assign this land to a state first",
+        false,
+        "error"
+      );
 
     if (d3.event.shiftKey === false) exitAddProvinceMode();
 
@@ -879,8 +1025,8 @@ function editProvinces() {
     const name = burg ? pack.burgs[burg].name : Names.getState(Names.getCultureShort(c), c);
     const formName = oldProvince ? provinces[oldProvince].formName : "Province";
     const fullName = name + " " + formName;
-    const stateColor = pack.states[state].color,
-      rndColor = getRandomColor();
+    const stateColor = pack.states[state].color;
+    const rndColor = getRandomColor();
     const color = stateColor[0] === "#" ? d3.color(d3.interpolate(stateColor, rndColor)(0.2)).hex() : rndColor;
 
     // generate emblem
@@ -900,12 +1046,11 @@ function editProvinces() {
       cells.province[c] = province;
     });
 
-    if (!layerIsOn("toggleBorders")) toggleBorders();
-    else drawBorders();
-    if (!layerIsOn("toggleProvinces")) toggleProvinces();
-    else drawProvinces();
+    if (layerIsOn("toggleBorders")) drawBorders();
+    if (layerIsOn("toggleProvinces")) drawProvinces();
+
     collectStatistics();
-    document.getElementById("provincesFilterState").value = state;
+    byId("provincesFilterState").value = state;
     provincesEditorAddLines();
   }
 
@@ -918,7 +1063,7 @@ function editProvinces() {
   }
 
   function recolorProvinces() {
-    const state = +document.getElementById("provincesFilterState").value;
+    const state = +byId("provincesFilterState").value;
 
     pack.provinces.forEach(p => {
       if (!p || p.removed) return;
@@ -934,7 +1079,7 @@ function editProvinces() {
 
   function downloadProvincesData() {
     const unit = areaUnit.value === "square" ? distanceUnitInput.value + "2" : areaUnit.value;
-    let data = "Id,Province,Full Name,Form,State,Color,Capital,Area " + unit + ",Total Population,Rural Population,Urban Population\n"; // headers
+    let data = `Id,Province,Full Name,Form,State,Color,Capital,Area ${unit},Total Population,Rural Population,Urban Population,Burgs\n`; // headers
 
     body.querySelectorAll(":scope > div").forEach(function (el) {
       const key = parseInt(el.dataset.id);
@@ -948,8 +1093,9 @@ function editProvinces() {
       data += el.dataset.capital + ",";
       data += el.dataset.area + ",";
       data += el.dataset.population + ",";
-      data += `${Math.round(provincePack.rural * populationRate)},`;
-      data += `${Math.round(provincePack.urban * populationRate * urbanization)}\n`;
+      data += Math.round(provincePack.rural * populationRate) + ",";
+      data += Math.round(provincePack.urban * populationRate * urbanization) + ",";
+      data += el.dataset.burgs + "\n";
     });
 
     const name = getFileName("Provinces") + ".csv";
@@ -957,7 +1103,7 @@ function editProvinces() {
   }
 
   function removeAllProvinces() {
-    alertMessage.innerHTML = `Are you sure you want to remove all provinces? <br>This action cannot be reverted`;
+    alertMessage.innerHTML = /* html */ `Are you sure you want to remove all provinces? <br />This action cannot be reverted`;
     $("#alert").dialog({
       resizable: false,
       title: "Remove all provinces",
@@ -975,8 +1121,7 @@ function editProvinces() {
           pack.states.forEach(s => (s.provinces = []));
 
           unfog();
-          if (!layerIsOn("toggleBorders")) toggleBorders();
-          else drawBorders();
+          if (layerIsOn("toggleBorders")) drawBorders();
           provs.select("#provincesBody").remove();
           turnButtonOff("toggleProvinces");
 
@@ -1005,4 +1150,12 @@ function editProvinces() {
     if (customization === 11) exitProvincesManualAssignment("close");
     if (customization === 12) exitAddProvinceMode();
   }
+}
+
+function updateLockStatus(provinceId, classList) {
+  const p = pack.provinces[provinceId];
+  p.lock = !p.lock;
+
+  classList.toggle("icon-lock-open");
+  classList.toggle("icon-lock");
 }

@@ -2,7 +2,22 @@
 
 window.Religions = (function () {
   // name generation approach and relative chance to be selected
-  const approach = {Number: 1, Being: 3, Adjective: 5, "Color + Animal": 5, "Adjective + Animal": 5, "Adjective + Being": 5, "Adjective + Genitive": 1, "Color + Being": 3, "Color + Genitive": 3, "Being + of + Genitive": 2, "Being + of the + Genitive": 1, "Animal + of + Genitive": 1, "Adjective + Being + of + Genitive": 2, "Adjective + Animal + of + Genitive": 2};
+  const approach = {
+    Number: 1,
+    Being: 3,
+    Adjective: 5,
+    "Color + Animal": 5,
+    "Adjective + Animal": 5,
+    "Adjective + Being": 5,
+    "Adjective + Genitive": 1,
+    "Color + Being": 3,
+    "Color + Genitive": 3,
+    "Being + of + Genitive": 2,
+    "Being + of the + Genitive": 1,
+    "Animal + of + Genitive": 1,
+    "Adjective + Being + of + Genitive": 2,
+    "Adjective + Animal + of + Genitive": 2
+  };
 
   // turn weighted array into simple array
   const approaches = [];
@@ -14,310 +29,833 @@ window.Religions = (function () {
 
   const base = {
     number: ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"],
-    being: ["God", "Goddess", "Lord", "Lady", "Deity", "Creator", "Maker", "Overlord", "Ruler", "Chief", "Master", "Spirit", "Ancestor", "Father", "Forebear", "Forefather", "Mother", "Brother", "Sister", "Elder", "Numen", "Ancient", "Virgin", "Giver", "Council", "Guardian", "Reaper"],
-    animal: ["Dragon", "Wyvern", "Phoenix", "Unicorn", "Sphinx", "Centaur", "Pegasus", "Kraken", "Basilisk", "Chimera", "Cyclope", "Antelope", "Ape", "Badger", "Bear", "Beaver", "Bison", "Boar", "Buffalo", "Cat", "Cobra", "Crane", "Crocodile", "Crow", "Deer", "Dog", "Eagle", "Elk", "Fox", "Goat", "Goose", "Hare", "Hawk", "Heron", "Horse", "Hyena", "Ibis", "Jackal", "Jaguar", "Lark", "Leopard", "Lion", "Mantis", "Marten", "Moose", "Mule", "Narwhal", "Owl", "Panther", "Rat", "Raven", "Rook", "Scorpion", "Shark", "Sheep", "Snake", "Spider", "Swan", "Tiger", "Turtle", "Viper", "Vulture", "Walrus", "Wolf", "Wolverine", "Worm", "Camel", "Falcon", "Hound", "Ox", "Serpent"],
-    adjective: ["New", "Good", "High", "Old", "Great", "Big", "Young", "Major", "Strong", "Happy", "Last", "Main", "Huge", "Far", "Beautiful", "Wild", "Fair", "Prime", "Crazy", "Ancient", "Proud", "Secret", "Lucky", "Sad", "Silent", "Latter", "Severe", "Fat", "Holy", "Pure", "Aggressive", "Honest", "Giant", "Mad", "Pregnant", "Distant", "Lost", "Broken", "Blind", "Friendly", "Unknown", "Sleeping", "Slumbering", "Loud", "Hungry", "Wise", "Worried", "Sacred", "Magical", "Superior", "Patient", "Dead", "Deadly", "Peaceful", "Grateful", "Frozen", "Evil", "Scary", "Burning", "Divine", "Bloody", "Dying", "Waking", "Brutal", "Unhappy", "Calm", "Cruel", "Favorable", "Blond", "Explicit", "Disturbing", "Devastating", "Brave", "Sunny", "Troubled", "Flying", "Sustainable", "Marine", "Fatal", "Inherent", "Selected", "Naval", "Cheerful", "Almighty", "Benevolent", "Eternal", "Immutable", "Infallible"],
-    genitive: ["Day", "Life", "Death", "Night", "Home", "Fog", "Snow", "Winter", "Summer", "Cold", "Springs", "Gates", "Nature", "Thunder", "Lightning", "War", "Ice", "Frost", "Fire", "Doom", "Fate", "Pain", "Heaven", "Justice", "Light", "Love", "Time", "Victory"],
-    theGenitive: ["World", "Word", "South", "West", "North", "East", "Sun", "Moon", "Peak", "Fall", "Dawn", "Eclipse", "Abyss", "Blood", "Tree", "Earth", "Harvest", "Rainbow", "Sea", "Sky", "Stars", "Storm", "Underworld", "Wild"],
-    color: ["Dark", "Light", "Bright", "Golden", "White", "Black", "Red", "Pink", "Purple", "Blue", "Green", "Yellow", "Amber", "Orange", "Brown", "Grey"]
+    being: [
+      "Ancestor",
+      "Ancient",
+      "Avatar",
+      "Brother",
+      "Champion",
+      "Chief",
+      "Council",
+      "Creator",
+      "Deity",
+      "Divine One",
+      "Elder",
+      "Enlightened Being",
+      "Father",
+      "Forebear",
+      "Forefather",
+      "Giver",
+      "God",
+      "Goddess",
+      "Guardian",
+      "Guide",
+      "Hierach",
+      "Lady",
+      "Lord",
+      "Maker",
+      "Master",
+      "Mother",
+      "Numen",
+      "Oracle",
+      "Overlord",
+      "Protector",
+      "Reaper",
+      "Ruler",
+      "Sage",
+      "Seer",
+      "Sister",
+      "Spirit",
+      "Supreme Being",
+      "Transcendent",
+      "Virgin"
+    ],
+    animal: [
+      "Antelope",
+      "Ape",
+      "Badger",
+      "Basilisk",
+      "Bear",
+      "Beaver",
+      "Bison",
+      "Boar",
+      "Buffalo",
+      "Camel",
+      "Cat",
+      "Centaur",
+      "Cerberus",
+      "Chimera",
+      "Cobra",
+      "Cockatrice",
+      "Crane",
+      "Crocodile",
+      "Crow",
+      "Cyclope",
+      "Deer",
+      "Dog",
+      "Direwolf",
+      "Drake",
+      "Dragon",
+      "Eagle",
+      "Elephant",
+      "Elk",
+      "Falcon",
+      "Fox",
+      "Goat",
+      "Goose",
+      "Gorgon",
+      "Gryphon",
+      "Hare",
+      "Hawk",
+      "Heron",
+      "Hippogriff",
+      "Horse",
+      "Hound",
+      "Hyena",
+      "Ibis",
+      "Jackal",
+      "Jaguar",
+      "Kitsune",
+      "Kraken",
+      "Lark",
+      "Leopard",
+      "Lion",
+      "Manticore",
+      "Mantis",
+      "Marten",
+      "Minotaur",
+      "Moose",
+      "Mule",
+      "Narwhal",
+      "Owl",
+      "Ox",
+      "Panther",
+      "Pegasus",
+      "Phoenix",
+      "Python",
+      "Rat",
+      "Raven",
+      "Roc",
+      "Rook",
+      "Scorpion",
+      "Serpent",
+      "Shark",
+      "Sheep",
+      "Snake",
+      "Sphinx",
+      "Spider",
+      "Swan",
+      "Tiger",
+      "Turtle",
+      "Unicorn",
+      "Viper",
+      "Vulture",
+      "Walrus",
+      "Wolf",
+      "Wolverine",
+      "Worm",
+      "Wyvern",
+      "Yeti"
+    ],
+    adjective: [
+      "Aggressive",
+      "Almighty",
+      "Ancient",
+      "Beautiful",
+      "Benevolent",
+      "Big",
+      "Blind",
+      "Blond",
+      "Bloody",
+      "Brave",
+      "Broken",
+      "Brutal",
+      "Burning",
+      "Calm",
+      "Celestial",
+      "Cheerful",
+      "Crazy",
+      "Cruel",
+      "Dead",
+      "Deadly",
+      "Devastating",
+      "Distant",
+      "Disturbing",
+      "Divine",
+      "Dying",
+      "Eternal",
+      "Ethernal",
+      "Empyreal",
+      "Enigmatic",
+      "Enlightened",
+      "Evil",
+      "Explicit",
+      "Fair",
+      "Far",
+      "Fat",
+      "Fatal",
+      "Favorable",
+      "Flying",
+      "Friendly",
+      "Frozen",
+      "Giant",
+      "Good",
+      "Grateful",
+      "Great",
+      "Happy",
+      "High",
+      "Holy",
+      "Honest",
+      "Huge",
+      "Hungry",
+      "Illustrious",
+      "Immutable",
+      "Ineffable",
+      "Infallible",
+      "Inherent",
+      "Last",
+      "Latter",
+      "Lost",
+      "Loud",
+      "Lucky",
+      "Mad",
+      "Magical",
+      "Main",
+      "Major",
+      "Marine",
+      "Mythical",
+      "Mystical",
+      "Naval",
+      "New",
+      "Noble",
+      "Old",
+      "Otherworldly",
+      "Patient",
+      "Peaceful",
+      "Pregnant",
+      "Prime",
+      "Proud",
+      "Pure",
+      "Radiant",
+      "Resplendent",
+      "Sacred",
+      "Sacrosanct",
+      "Sad",
+      "Scary",
+      "Secret",
+      "Selected",
+      "Serene",
+      "Severe",
+      "Silent",
+      "Sleeping",
+      "Slumbering",
+      "Sovereign",
+      "Strong",
+      "Sunny",
+      "Superior",
+      "Supernatural",
+      "Sustainable",
+      "Transcendent",
+      "Transcendental",
+      "Troubled",
+      "Unearthly",
+      "Unfathomable",
+      "Unhappy",
+      "Unknown",
+      "Unseen",
+      "Waking",
+      "Wild",
+      "Wise",
+      "Worried",
+      "Young"
+    ],
+    genitive: [
+      "Cold",
+      "Day",
+      "Death",
+      "Doom",
+      "Fate",
+      "Fire",
+      "Fog",
+      "Frost",
+      "Gates",
+      "Heaven",
+      "Home",
+      "Ice",
+      "Justice",
+      "Life",
+      "Light",
+      "Lightning",
+      "Love",
+      "Nature",
+      "Night",
+      "Pain",
+      "Snow",
+      "Springs",
+      "Summer",
+      "Thunder",
+      "Time",
+      "Victory",
+      "War",
+      "Winter"
+    ],
+    theGenitive: [
+      "Abyss",
+      "Blood",
+      "Dawn",
+      "Earth",
+      "East",
+      "Eclipse",
+      "Fall",
+      "Harvest",
+      "Moon",
+      "North",
+      "Peak",
+      "Rainbow",
+      "Sea",
+      "Sky",
+      "South",
+      "Stars",
+      "Storm",
+      "Sun",
+      "Tree",
+      "Underworld",
+      "West",
+      "Wild",
+      "Word",
+      "World"
+    ],
+    color: [
+      "Amber",
+      "Black",
+      "Blue",
+      "Bright",
+      "Bronze",
+      "Brown",
+      "Coral",
+      "Crimson",
+      "Dark",
+      "Emerald",
+      "Golden",
+      "Green",
+      "Grey",
+      "Indigo",
+      "Lavender",
+      "Light",
+      "Magenta",
+      "Maroon",
+      "Orange",
+      "Pink",
+      "Plum",
+      "Purple",
+      "Red",
+      "Ruby",
+      "Sapphire",
+      "Teal",
+      "Turquoise",
+      "White",
+      "Yellow"
+    ]
   };
 
   const forms = {
-    Folk: {Shamanism: 2, Animism: 2, "Ancestor worship": 1, Polytheism: 2},
-    Organized: {Polytheism: 5, Dualism: 1, Monotheism: 4, "Non-theism": 1},
-    Cult: {Cult: 1, "Dark Cult": 1},
-    Heresy: {Heresy: 1}
+    Folk: {
+      Shamanism: 4,
+      Animism: 4,
+      Polytheism: 4,
+      "Ancestor Worship": 2,
+      "Nature Worship": 1,
+      Totemism: 1
+    },
+    Organized: {
+      Polytheism: 7,
+      Monotheism: 7,
+      Dualism: 3,
+      Pantheism: 2,
+      "Non-theism": 2
+    },
+    Cult: {
+      Cult: 5,
+      "Dark Cult": 5,
+      Sect: 1
+    },
+    Heresy: {
+      Heresy: 1
+    }
   };
 
-  const methods = {"Random + type": 3, "Random + ism": 1, "Supreme + ism": 5, "Faith of + Supreme": 5, "Place + ism": 1, "Culture + ism": 2, "Place + ian + type": 6, "Culture + type": 4};
+  const namingMethods = {
+    Folk: {
+      "Culture + type": 1
+    },
+
+    Organized: {
+      "Random + type": 3,
+      "Random + ism": 1,
+      "Supreme + ism": 5,
+      "Faith of + Supreme": 5,
+      "Place + ism": 1,
+      "Culture + ism": 2,
+      "Place + ian + type": 6,
+      "Culture + type": 4
+    },
+
+    Cult: {
+      "Burg + ian + type": 2,
+      "Random + ian + type": 1,
+      "Type + of the + meaning": 2
+    },
+
+    Heresy: {
+      "Burg + ian + type": 3,
+      "Random + ism": 3,
+      "Random + ian + type": 2,
+      "Type + of the + meaning": 1
+    }
+  };
 
   const types = {
-    Shamanism: {Beliefs: 3, Shamanism: 2, Spirits: 1},
-    Animism: {Spirits: 1, Beliefs: 1},
-    "Ancestor worship": {Beliefs: 1, Forefathers: 2, Ancestors: 2},
+    Shamanism: {Beliefs: 3, Shamanism: 2, Druidism: 1, Spirits: 1},
+    Animism: {Spirits: 3, Beliefs: 1},
     Polytheism: {Deities: 3, Faith: 1, Gods: 1, Pantheon: 1},
+    "Ancestor Worship": {Beliefs: 1, Forefathers: 2, Ancestors: 2},
+    "Nature Worship": {Beliefs: 3, Druids: 1},
+    Totemism: {Beliefs: 2, Totems: 2, Idols: 1},
 
+    Monotheism: {Religion: 2, Church: 3, Faith: 1},
     Dualism: {Religion: 3, Faith: 1, Cult: 1},
-    Monotheism: {Religion: 1, Church: 1},
+    Pantheism: {Religion: 1, Faith: 1},
     "Non-theism": {Beliefs: 3, Spirits: 1},
 
-    Cult: {Cult: 4, Sect: 4, Worship: 1, Orden: 1, Coterie: 1, Arcanum: 1},
-    "Dark Cult": {Cult: 2, Sect: 2, Occultism: 1, Idols: 1, Coven: 1, Circle: 1, Blasphemy: 1},
+    Cult: {Cult: 4, Sect: 2, Arcanum: 1, Order: 1, Worship: 1},
+    "Dark Cult": {Cult: 2, Blasphemy: 1, Circle: 1, Coven: 1, Idols: 1, Occultism: 1},
+    Sect: {Sect: 3, Society: 1},
 
-    Heresy: {Heresy: 3, Sect: 2, Schism: 1, Dissenters: 1, Circle: 1, Brotherhood: 1, Society: 1, Iconoclasm: 1, Dissent: 1, Apostates: 1}
+    Heresy: {
+      Heresy: 3,
+      Sect: 2,
+      Apostates: 1,
+      Brotherhood: 1,
+      Circle: 1,
+      Dissent: 1,
+      Dissenters: 1,
+      Iconoclasm: 1,
+      Schism: 1,
+      Society: 1
+    }
   };
 
-  const generate = function () {
+  const expansionismMap = {
+    Folk: () => 0,
+    Organized: () => gauss(5, 3, 0, 10, 1),
+    Cult: () => gauss(0.5, 0.5, 0, 5, 1),
+    Heresy: () => gauss(1, 0.5, 0, 5, 1)
+  };
+
+  function generate() {
     TIME && console.time("generateReligions");
-    const cells = pack.cells,
-      states = pack.states,
-      cultures = pack.cultures;
-    const religions = (pack.religions = []);
-    cells.religion = new Uint16Array(cells.culture); // cell religion; initially based on culture
+    const lockedReligions = pack.religions?.filter(r => r.i && r.lock && !r.removed) || [];
 
-    // add folk religions
-    pack.cultures.forEach(c => {
-      if (!c.i) {
-        religions.push({i: 0, name: "No religion"});
-        return;
-      }
-      if (c.removed) {
-        religions.push({i: c.i, name: "Extinct religion for " + c.name, color: getMixedColor(c.color, 0.1, 0), removed: true});
-        return;
-      }
-      const form = rw(forms.Folk);
-      const name = c.name + " " + rw(types[form]);
-      const deity = form === "Animism" ? null : getDeityName(c.i);
-      const color = getMixedColor(c.color, 0.1, 0); // `url(#hatch${rand(8,13)})`;
-      religions.push({i: c.i, name, color, culture: c.i, type: "Folk", form, deity, center: c.center, origin: 0});
-    });
+    const folkReligions = generateFolkReligions();
+    const organizedReligions = generateOrganizedReligions(+religionsNumber.value, lockedReligions);
 
-    if (religionsInput.value == 0 || pack.cultures.length < 2) {
-      religions.filter(r => r.i).forEach(r => (r.code = abbreviate(r.name)));
-      return;
-    }
+    const namedReligions = specifyReligions([...folkReligions, ...organizedReligions]);
+    const indexedReligions = combineReligions(namedReligions, lockedReligions);
+    const religionIds = expandReligions(indexedReligions);
+    const religions = defineOrigins(religionIds, indexedReligions);
 
-    const burgs = pack.burgs.filter(b => b.i && !b.removed);
-    const sorted = burgs.length > +religionsInput.value ? burgs.sort((a, b) => b.population - a.population).map(b => b.cell) : cells.i.filter(i => cells.s[i] > 2).sort((a, b) => cells.s[b] - cells.s[a]);
-    const religionsTree = d3.quadtree();
-    const spacing = (graphWidth + graphHeight) / 6 / religionsInput.value; // base min distance between towns
-    const cultsCount = Math.floor((rand(10, 40) / 100) * religionsInput.value);
-    const count = +religionsInput.value - cultsCount + religions.length;
+    pack.religions = religions;
+    pack.cells.religion = religionIds;
 
-    // generate organized religions
-    for (let i = 0; religions.length < count && i < 1000; i++) {
-      let center = sorted[biased(0, sorted.length - 1, 5)]; // religion center
-      const form = rw(forms.Organized);
-      const state = cells.state[center];
-      const culture = cells.culture[center];
-
-      const deity = form === "Non-theism" ? null : getDeityName(culture);
-      let [name, expansion] = getReligionName(form, deity, center);
-      if (expansion === "state" && !state) expansion = "global";
-      if (expansion === "culture" && !culture) expansion = "global";
-
-      if (expansion === "state" && Math.random() > 0.5) center = states[state].center;
-      if (expansion === "culture" && Math.random() > 0.5) center = cultures[culture].center;
-
-      if (!cells.burg[center] && cells.c[center].some(c => cells.burg[c])) center = cells.c[center].find(c => cells.burg[c]);
-      const x = cells.p[center][0],
-        y = cells.p[center][1];
-
-      const s = spacing * gauss(1, 0.3, 0.2, 2, 2); // randomize to make the placement not uniform
-      if (religionsTree.find(x, y, s) !== undefined) continue; // to close to existing religion
-
-      // add "Old" to name of the folk religion on this culture
-      const folk = religions.find(r => r.culture === culture && r.type === "Folk");
-      if (folk && expansion === "culture" && folk.name.slice(0, 3) !== "Old") folk.name = "Old " + folk.name;
-      const origin = folk ? folk.i : 0;
-
-      const expansionism = rand(3, 8);
-      const color = getMixedColor(religions[origin].color, 0.3, 0); // `url(#hatch${rand(0,5)})`;
-      religions.push({i: religions.length, name, color, culture, type: "Organized", form, deity, expansion, expansionism, center, origin});
-      religionsTree.add([x, y]);
-    }
-
-    // generate cults
-    for (let i = 0; religions.length < count + cultsCount && i < 1000; i++) {
-      const form = rw(forms.Cult);
-      let center = sorted[biased(0, sorted.length - 1, 1)]; // religion center
-      if (!cells.burg[center] && cells.c[center].some(c => cells.burg[c])) center = cells.c[center].find(c => cells.burg[c]);
-      const x = cells.p[center][0],
-        y = cells.p[center][1];
-
-      const s = spacing * gauss(2, 0.3, 1, 3, 2); // randomize to make the placement not uniform
-      if (religionsTree.find(x, y, s) !== undefined) continue; // to close to existing religion
-
-      const culture = cells.culture[center];
-      const folk = religions.find(r => r.culture === culture && r.type === "Folk");
-      const origin = folk ? folk.i : 0;
-      const deity = getDeityName(culture);
-      const name = getCultName(form, center);
-      const expansionism = gauss(1.1, 0.5, 0, 5);
-      const color = getMixedColor(cultures[culture].color, 0.5, 0); // "url(#hatch7)";
-      religions.push({i: religions.length, name, color, culture, type: "Cult", form, deity, expansion: "global", expansionism, center, origin});
-      religionsTree.add([x, y]);
-      //debug.append("circle").attr("cx", x).attr("cy", y).attr("r", 2).attr("fill", "red");
-    }
-
-    expandReligions();
-
-    // generate heresies
-    religions
-      .filter(r => r.type === "Organized")
-      .forEach(r => {
-        if (r.expansionism < 3) return;
-        const count = gauss(0, 1, 0, 3);
-        for (let i = 0; i < count; i++) {
-          let center = ra(cells.i.filter(i => cells.religion[i] === r.i && cells.c[i].some(c => cells.religion[c] !== r.i)));
-          if (!center) continue;
-          if (!cells.burg[center] && cells.c[center].some(c => cells.burg[c])) center = cells.c[center].find(c => cells.burg[c]);
-          const x = cells.p[center][0],
-            y = cells.p[center][1];
-          if (religionsTree.find(x, y, spacing / 10) !== undefined) continue; // to close to other
-
-          const culture = cells.culture[center];
-          const name = getCultName("Heresy", center);
-          const expansionism = gauss(1.2, 0.5, 0, 5);
-          const color = getMixedColor(r.color, 0.4, 0.2); // "url(#hatch6)";
-          religions.push({i: religions.length, name, color, culture, type: "Heresy", form: r.form, deity: r.deity, expansion: "global", expansionism, center, origin: r.i});
-          religionsTree.add([x, y]);
-          //debug.append("circle").attr("cx", x).attr("cy", y).attr("r", 2).attr("fill", "green");
-        }
-      });
-
-    expandHeresies();
     checkCenters();
 
     TIME && console.timeEnd("generateReligions");
-  };
+  }
+
+  function generateFolkReligions() {
+    return pack.cultures
+      .filter(c => c.i && !c.removed)
+      .map(culture => ({type: "Folk", form: rw(forms.Folk), culture: culture.i, center: culture.center}));
+  }
+
+  function generateOrganizedReligions(desiredReligionNumber, lockedReligions) {
+    const cells = pack.cells;
+    const lockedReligionCount = lockedReligions.filter(({type}) => type !== "Folk").length || 0;
+    const requiredReligionsNumber = desiredReligionNumber - lockedReligionCount;
+    if (requiredReligionsNumber < 1) return [];
+
+    const candidateCells = getCandidateCells();
+    const religionCores = placeReligions();
+
+    const cultsCount = Math.floor((rand(1, 4) / 10) * religionCores.length); // 10-40%
+    const heresiesCount = Math.floor((rand(0, 3) / 10) * religionCores.length); // 0-30%
+    const organizedCount = religionCores.length - cultsCount - heresiesCount;
+
+    const getType = index => {
+      if (index < organizedCount) return "Organized";
+      if (index < organizedCount + cultsCount) return "Cult";
+      return "Heresy";
+    };
+
+    return religionCores.map((cellId, index) => {
+      const type = getType(index);
+      const form = rw(forms[type]);
+      const cultureId = cells.culture[cellId];
+
+      return {type, form, culture: cultureId, center: cellId};
+    });
+
+    function placeReligions() {
+      const religionCells = [];
+      const religionsTree = d3.quadtree();
+
+      // pre-populate with locked centers
+      lockedReligions.forEach(({center}) => religionsTree.add(cells.p[center]));
+
+      // min distance between religion inceptions
+      const spacing = (graphWidth + graphHeight) / 2 / desiredReligionNumber;
+
+      for (const cellId of candidateCells) {
+        const [x, y] = cells.p[cellId];
+
+        if (religionsTree.find(x, y, spacing) === undefined) {
+          religionCells.push(cellId);
+          religionsTree.add([x, y]);
+
+          if (religionCells.length === requiredReligionsNumber) return religionCells;
+        }
+      }
+
+      WARN && console.warn(`Placed only ${religionCells.length} of ${requiredReligionsNumber} religions`);
+      return religionCells;
+    }
+
+    function getCandidateCells() {
+      const validBurgs = pack.burgs.filter(b => b.i && !b.removed);
+
+      if (validBurgs.length >= requiredReligionsNumber)
+        return validBurgs.sort((a, b) => b.population - a.population).map(burg => burg.cell);
+      return cells.i.filter(i => cells.s[i] > 2).sort((a, b) => cells.s[b] - cells.s[a]);
+    }
+  }
+
+  function specifyReligions(newReligions) {
+    const {cells, cultures} = pack;
+
+    const rawReligions = newReligions.map(({type, form, culture: cultureId, center}) => {
+      const supreme = getDeityName(cultureId);
+      const deity = form === "Non-theism" || form === "Animism" ? null : supreme;
+
+      const stateId = cells.state[center];
+
+      let [name, expansion] = generateReligionName(type, form, supreme, center);
+      if (expansion === "state" && !stateId) expansion = "global";
+
+      const expansionism = expansionismMap[type]();
+      const color = getReligionColor(cultures[cultureId], type);
+
+      return {name, type, form, culture: cultureId, center, deity, expansion, expansionism, color};
+    });
+
+    return rawReligions;
+
+    function getReligionColor(culture, type) {
+      if (!culture.i) return getRandomColor();
+
+      if (type === "Folk") return culture.color;
+      if (type === "Heresy") return getMixedColor(culture.color, 0.35, 0.2);
+      if (type === "Cult") return getMixedColor(culture.color, 0.5, 0);
+      return getMixedColor(culture.color, 0.25, 0.4);
+    }
+  }
+
+  // indexes, conditionally renames, and abbreviates religions
+  function combineReligions(namedReligions, lockedReligions) {
+    const indexedReligions = [{name: "No religion", i: 0}];
+
+    const {lockedReligionQueue, highestLockedIndex, codes, numberLockedFolk} = parseLockedReligions();
+    const maxIndex = Math.max(
+      highestLockedIndex,
+      namedReligions.length + lockedReligions.length + 1 - numberLockedFolk
+    );
+
+    for (let index = 1, progress = 0; index < maxIndex; index = indexedReligions.length) {
+      // place locked religion back at its old index
+      if (index === lockedReligionQueue[0]?.i) {
+        const nextReligion = lockedReligionQueue.shift();
+        indexedReligions.push(nextReligion);
+        continue;
+      }
+
+      // slot the new religions
+      if (progress < namedReligions.length) {
+        const nextReligion = namedReligions[progress];
+        progress++;
+
+        if (
+          nextReligion.type === "Folk" &&
+          lockedReligions.some(({type, culture}) => type === "Folk" && culture === nextReligion.culture)
+        )
+          continue; // when there is a locked Folk religion for this culture discard duplicate
+
+        const newName = renameOld(nextReligion);
+        const code = abbreviate(newName, codes);
+        codes.push(code);
+        indexedReligions.push({...nextReligion, i: index, name: newName, code});
+        continue;
+      }
+
+      indexedReligions.push({i: index, type: "Folk", culture: 0, name: "Removed religion", removed: true});
+    }
+    return indexedReligions;
+
+    function parseLockedReligions() {
+      // copy and sort the locked religions list
+      const lockedReligionQueue = lockedReligions
+        .map(religion => {
+          // and filter their origins to locked religions
+          let newOrigin = religion.origins.filter(n => lockedReligions.some(({i: index}) => index === n));
+          if (newOrigin === []) newOrigin = [0];
+          return {...religion, origins: newOrigin};
+        })
+        .sort((a, b) => a.i - b.i);
+
+      const highestLockedIndex = Math.max(...lockedReligions.map(r => r.i));
+      const codes = lockedReligions.length > 0 ? lockedReligions.map(r => r.code) : [];
+      const numberLockedFolk = lockedReligions.filter(({type}) => type === "Folk").length;
+
+      return {lockedReligionQueue, highestLockedIndex, codes, numberLockedFolk};
+    }
+
+    // prepend 'Old' to names of folk religions which have organized competitors
+    function renameOld({name, type, culture: cultureId}) {
+      if (type !== "Folk") return name;
+
+      const haveOrganized =
+        namedReligions.some(
+          ({type, culture, expansion}) => culture === cultureId && type === "Organized" && expansion === "culture"
+        ) ||
+        lockedReligions.some(
+          ({type, culture, expansion}) => culture === cultureId && type === "Organized" && expansion === "culture"
+        );
+      if (haveOrganized && name.slice(0, 3) !== "Old") return `Old ${name}`;
+      return name;
+    }
+  }
+
+  // finally generate and stores origins trees
+  function defineOrigins(religionIds, indexedReligions) {
+    const religionOriginsParamsMap = {
+      Organized: {clusterSize: 100, maxReligions: 2},
+      Cult: {clusterSize: 50, maxReligions: 3},
+      Heresy: {clusterSize: 50, maxReligions: 4}
+    };
+
+    const origins = indexedReligions.map(({i, type, culture: cultureId, expansion, center}) => {
+      if (i === 0) return null; // no religion
+      if (type === "Folk") return [0]; // folk religions originate from its parent culture only
+
+      const folkReligion = indexedReligions.find(({culture, type}) => type === "Folk" && culture === cultureId);
+      const isFolkBased = folkReligion && cultureId && expansion === "culture" && each(2)(center);
+      if (isFolkBased) return [folkReligion.i];
+
+      const {clusterSize, maxReligions} = religionOriginsParamsMap[type];
+      const fallbackOrigin = folkReligion?.i || 0;
+      return getReligionsInRadius(pack.cells.c, center, religionIds, i, clusterSize, maxReligions, fallbackOrigin);
+    });
+
+    return indexedReligions.map((religion, index) => ({...religion, origins: origins[index]}));
+  }
+
+  function getReligionsInRadius(neighbors, center, religionIds, religionId, clusterSize, maxReligions, fallbackOrigin) {
+    const foundReligions = new Set();
+    const queue = [center];
+    const checked = {};
+
+    for (let size = 0; queue.length && size < clusterSize; size++) {
+      const cellId = queue.shift();
+      checked[cellId] = true;
+
+      for (const neibId of neighbors[cellId]) {
+        if (checked[neibId]) continue;
+        checked[neibId] = true;
+
+        const neibReligion = religionIds[neibId];
+        if (neibReligion && neibReligion < religionId) foundReligions.add(neibReligion);
+        if (foundReligions.size >= maxReligions) return [...foundReligions];
+        queue.push(neibId);
+      }
+    }
+
+    return foundReligions.size ? [...foundReligions] : [fallbackOrigin];
+  }
+
+  // growth algorithm to assign cells to religions
+  function expandReligions(religions) {
+    const {cells, routes} = pack;
+    const religionIds = spreadFolkReligions(religions);
+
+    const queue = new FlatQueue();
+    const cost = [];
+
+    // limit cost for organized religions growth
+    const maxExpansionCost = (cells.i.length / 20) * byId("growthRate").valueAsNumber;
+
+    religions
+      .filter(r => r.i && !r.lock && r.type !== "Folk" && !r.removed)
+      .forEach(r => {
+        religionIds[r.center] = r.i;
+        queue.push({e: r.center, p: 0, r: r.i, s: cells.state[r.center]}, 0);
+        cost[r.center] = 1;
+      });
+
+    const religionsMap = new Map(religions.map(r => [r.i, r]));
+
+    while (queue.length) {
+      const {e: cellId, p, r, s: state} = queue.pop();
+      const {culture, expansion, expansionism} = religionsMap.get(r);
+
+      cells.c[cellId].forEach(nextCell => {
+        if (expansion === "culture" && culture !== cells.culture[nextCell]) return;
+        if (expansion === "state" && state !== cells.state[nextCell]) return;
+        if (religionsMap.get(religionIds[nextCell])?.lock) return;
+
+        const cultureCost = culture !== cells.culture[nextCell] ? 10 : 0;
+        const stateCost = state !== cells.state[nextCell] ? 10 : 0;
+        const passageCost = getPassageCost(cellId, nextCell);
+
+        const cellCost = cultureCost + stateCost + passageCost;
+        const totalCost = p + 10 + cellCost / expansionism;
+        if (totalCost > maxExpansionCost) return;
+
+        if (!cost[nextCell] || totalCost < cost[nextCell]) {
+          if (cells.culture[nextCell]) religionIds[nextCell] = r; // assign religion to cell
+          cost[nextCell] = totalCost;
+
+          queue.push({e: nextCell, p: totalCost, r, s: state}, totalCost);
+        }
+      });
+    }
+
+    return religionIds;
+
+    function getPassageCost(cellId, nextCellId) {
+      const route = Routes.getRoute(cellId, nextCellId);
+      if (isWater(cellId)) return route ? 50 : 500;
+
+      const biomePassageCost = biomesData.cost[cells.biome[nextCellId]];
+
+      if (route) {
+        if (route.group === "roads") return 1;
+        return biomePassageCost / 3; // trails and other routes
+      }
+
+      return biomePassageCost;
+    }
+  }
+
+  // folk religions initially get all cells of their culture, and locked religions are retained
+  function spreadFolkReligions(religions) {
+    const cells = pack.cells;
+    const hasPrior = cells.religion && true;
+    const religionIds = new Uint16Array(cells.i.length);
+
+    const folkReligions = religions.filter(religion => religion.type === "Folk" && !religion.removed);
+    const cultureToReligionMap = new Map(folkReligions.map(({i, culture}) => [culture, i]));
+
+    for (const cellId of cells.i) {
+      const oldId = (hasPrior && cells.religion[cellId]) || 0;
+      if (oldId && religions[oldId]?.lock && !religions[oldId]?.removed) {
+        religionIds[cellId] = oldId;
+        continue;
+      }
+      const cultureId = cells.culture[cellId];
+      religionIds[cellId] = cultureToReligionMap.get(cultureId) || 0;
+    }
+
+    return religionIds;
+  }
+
+  function checkCenters() {
+    const cells = pack.cells;
+    pack.religions.forEach(r => {
+      if (!r.i) return;
+      // move religion center if it's not within religion area after expansion
+      if (cells.religion[r.center] === r.i) return; // in area
+      const firstCell = cells.i.find(i => cells.religion[i] === r.i);
+      const cultureHome = pack.cultures[r.culture]?.center;
+      if (firstCell) r.center = firstCell; // move center, othervise it's an extinct religion
+      else if (r.type === "Folk" && cultureHome) r.center = cultureHome; // reset extinct culture centers
+    });
+  }
+
+  function recalculate() {
+    const newReligionIds = expandReligions(pack.religions);
+    pack.cells.religion = newReligionIds;
+
+    checkCenters();
+  }
 
   const add = function (center) {
-    const cells = pack.cells,
-      religions = pack.religions;
-    const r = cells.religion[center];
+    const {cells, cultures, religions} = pack;
+    const religionId = cells.religion[center];
     const i = religions.length;
-    const culture = cells.culture[center];
-    const color = getMixedColor(religions[r].color, 0.3, 0);
 
-    const type = religions[r].type === "Organized" ? rw({Organized: 4, Cult: 1, Heresy: 2}) : rw({Organized: 5, Cult: 2});
+    const cultureId = cells.culture[center];
+    const missingFolk =
+      cultureId !== 0 &&
+      !religions.some(({type, culture, removed}) => type === "Folk" && culture === cultureId && !removed);
+    const color = missingFolk ? cultures[cultureId].color : getMixedColor(religions[religionId].color, 0.3, 0);
+
+    const type = missingFolk
+      ? "Folk"
+      : religions[religionId].type === "Organized"
+      ? rw({Organized: 4, Cult: 1, Heresy: 2})
+      : rw({Organized: 5, Cult: 2});
     const form = rw(forms[type]);
-    const deity = type === "Heresy" ? religions[r].deity : form === "Non-theism" ? null : getDeityName(culture);
+    const deity =
+      type === "Heresy"
+        ? religions[religionId].deity
+        : form === "Non-theism" || form === "Animism"
+        ? null
+        : getDeityName(cultureId);
 
-    let name, expansion;
-    if (type === "Organized") [name, expansion] = getReligionName(form, deity, center);
-    else {
-      name = getCultName(form, center);
-      expansion = "global";
-    }
-    const formName = type === "Heresy" ? religions[r].form : form;
+    const [name, expansion] = generateReligionName(type, form, deity, center);
+
+    const formName = type === "Heresy" ? religions[religionId].form : form;
     const code = abbreviate(
       name,
       religions.map(r => r.code)
     );
-    religions.push({i, name, color, culture, type, form: formName, deity, expansion, expansionism: 0, center, cells: 0, area: 0, rural: 0, urban: 0, origin: r, code});
+    const influences = getReligionsInRadius(cells.c, center, cells.religion, i, 25, 3, 0);
+    const origins = type === "Folk" ? [0] : influences;
+
+    religions.push({
+      i,
+      name,
+      color,
+      culture: cultureId,
+      type,
+      form: formName,
+      deity,
+      expansion,
+      expansionism: expansionismMap[type](),
+      center,
+      cells: 0,
+      area: 0,
+      rural: 0,
+      urban: 0,
+      origins,
+      code
+    });
     cells.religion[center] = i;
   };
 
-  // growth algorithm to assign cells to religions
-  const expandReligions = function () {
-    const cells = pack.cells,
-      religions = pack.religions;
-    const queue = new PriorityQueue({comparator: (a, b) => a.p - b.p});
-    const cost = [];
-
-    religions
-      .filter(r => r.type === "Organized" || r.type === "Cult")
-      .forEach(r => {
-        cells.religion[r.center] = r.i;
-        queue.queue({e: r.center, p: 0, r: r.i, s: cells.state[r.center], c: r.culture});
-        cost[r.center] = 1;
-      });
-
-    const neutral = (cells.i.length / 5000) * 200 * gauss(1, 0.3, 0.2, 2, 2) * neutralInput.value; // limit cost for organized religions growth
-    const popCost = d3.max(cells.pop) / 3; // enougth population to spered religion without penalty
-
-    while (queue.length) {
-      const next = queue.dequeue(),
-        n = next.e,
-        p = next.p,
-        r = next.r,
-        c = next.c,
-        s = next.s;
-      const expansion = religions[r].expansion;
-
-      cells.c[n].forEach(function (e) {
-        if (expansion === "culture" && c !== cells.culture[e]) return;
-        if (expansion === "state" && s !== cells.state[e]) return;
-
-        const cultureCost = c !== cells.culture[e] ? 10 : 0;
-        const stateCost = s !== cells.state[e] ? 10 : 0;
-        const biomeCost = cells.road[e] ? 1 : biomesData.cost[cells.biome[e]];
-        const populationCost = Math.max(rn(popCost - cells.pop[e]), 0);
-        const heightCost = Math.max(cells.h[e], 20) - 20;
-        const waterCost = cells.h[e] < 20 ? (cells.road[e] ? 50 : 1000) : 0;
-        const totalCost = p + (cultureCost + stateCost + biomeCost + populationCost + heightCost + waterCost) / religions[r].expansionism;
-        if (totalCost > neutral) return;
-
-        if (!cost[e] || totalCost < cost[e]) {
-          if (cells.h[e] >= 20 && cells.culture[e]) cells.religion[e] = r; // assign religion to cell
-          cost[e] = totalCost;
-          queue.queue({e, p: totalCost, r, c, s});
-        }
-      });
-    }
-  };
-
-  // growth algorithm to assign cells to heresies
-  const expandHeresies = function () {
-    const cells = pack.cells,
-      religions = pack.religions;
-    const queue = new PriorityQueue({comparator: (a, b) => a.p - b.p});
-    const cost = [];
-
-    religions
-      .filter(r => r.type === "Heresy")
-      .forEach(r => {
-        const b = cells.religion[r.center]; // "base" religion id
-        cells.religion[r.center] = r.i; // heresy id
-        queue.queue({e: r.center, p: 0, r: r.i, b});
-        cost[r.center] = 1;
-      });
-
-    const neutral = (cells.i.length / 5000) * 500 * neutralInput.value; // limit cost for heresies growth
-
-    while (queue.length) {
-      const next = queue.dequeue(),
-        n = next.e,
-        p = next.p,
-        r = next.r,
-        b = next.b;
-
-      cells.c[n].forEach(function (e) {
-        const religionCost = cells.religion[e] === b ? 0 : 2000;
-        const biomeCost = cells.road[e] ? 0 : biomesData.cost[cells.biome[e]];
-        const heightCost = Math.max(cells.h[e], 20) - 20;
-        const waterCost = cells.h[e] < 20 ? (cells.road[e] ? 50 : 1000) : 0;
-        const totalCost = p + (religionCost + biomeCost + heightCost + waterCost) / Math.max(religions[r].expansionism, 0.1);
-
-        if (totalCost > neutral) return;
-
-        if (!cost[e] || totalCost < cost[e]) {
-          if (cells.h[e] >= 20 && cells.culture[e]) cells.religion[e] = r; // assign religion to cell
-          cost[e] = totalCost;
-          queue.queue({e, p: totalCost, r});
-        }
-      });
-    }
-  };
-
-  function checkCenters() {
-    const cells = pack.cells,
-      religions = pack.religions;
-
-    const codes = religions.map(r => r.code);
-    religions
-      .filter(r => r.i)
-      .forEach(r => {
-        r.code = abbreviate(r.name, codes);
-
-        // move religion center if it's not within religion area after expansion
-        if (cells.religion[r.center] === r.i) return; // in area
-        const religCells = cells.i.filter(i => cells.religion[i] === r.i);
-        if (!religCells.length) return; // extinct religion
-        r.center = religCells.sort((a, b) => b.pop - a.pop)[0];
-      });
-  }
-
   function updateCultures() {
-    TIME && console.time("updateCulturesForReligions");
     pack.religions = pack.religions.map((religion, index) => {
-      if (index === 0) {
-        return religion;
-      }
+      if (index === 0) return religion;
       return {...religion, culture: pack.cells.culture[religion.center]};
     });
-    TIME && console.timeEnd("updateCulturesForReligions");
   }
 
   // get supreme deity name
@@ -336,66 +874,55 @@ window.Religions = (function () {
     if (a === "Number") return ra(base.number);
     if (a === "Being") return ra(base.being);
     if (a === "Adjective") return ra(base.adjective);
-    if (a === "Color + Animal") return ra(base.color) + " " + ra(base.animal);
-    if (a === "Adjective + Animal") return ra(base.adjective) + " " + ra(base.animal);
-    if (a === "Adjective + Being") return ra(base.adjective) + " " + ra(base.being);
-    if (a === "Adjective + Genitive") return ra(base.adjective) + " " + ra(base.genitive);
-    if (a === "Color + Being") return ra(base.color) + " " + ra(base.being);
-    if (a === "Color + Genitive") return ra(base.color) + " " + ra(base.genitive);
-    if (a === "Being + of + Genitive") return ra(base.being) + " of " + ra(base.genitive);
-    if (a === "Being + of the + Genitive") return ra(base.being) + " of the " + ra(base.theGenitive);
-    if (a === "Animal + of + Genitive") return ra(base.animal) + " of " + ra(base.genitive);
-    if (a === "Adjective + Being + of + Genitive") return ra(base.adjective) + " " + ra(base.being) + " of " + ra(base.genitive);
-    if (a === "Adjective + Animal + of + Genitive") return ra(base.adjective) + " " + ra(base.animal) + " of " + ra(base.genitive);
+    if (a === "Color + Animal") return `${ra(base.color)} ${ra(base.animal)}`;
+    if (a === "Adjective + Animal") return `${ra(base.adjective)} ${ra(base.animal)}`;
+    if (a === "Adjective + Being") return `${ra(base.adjective)} ${ra(base.being)}`;
+    if (a === "Adjective + Genitive") return `${ra(base.adjective)} ${ra(base.genitive)}`;
+    if (a === "Color + Being") return `${ra(base.color)} ${ra(base.being)}`;
+    if (a === "Color + Genitive") return `${ra(base.color)} ${ra(base.genitive)}`;
+    if (a === "Being + of + Genitive") return `${ra(base.being)} of ${ra(base.genitive)}`;
+    if (a === "Being + of the + Genitive") return `${ra(base.being)} of the ${ra(base.theGenitive)}`;
+    if (a === "Animal + of + Genitive") return `${ra(base.animal)} of ${ra(base.genitive)}`;
+    if (a === "Adjective + Being + of + Genitive")
+      return `${ra(base.adjective)} ${ra(base.being)} of ${ra(base.genitive)}`;
+    if (a === "Adjective + Animal + of + Genitive")
+      return `${ra(base.adjective)} ${ra(base.animal)} of ${ra(base.genitive)}`;
+
+    ERROR && console.error("Unkown generation approach");
   }
 
-  function getReligionName(form, deity, center) {
-    const cells = pack.cells;
-    const random = function () {
-      return Names.getCulture(cells.culture[center], null, null, "", 0);
-    };
-    const type = function () {
-      return rw(types[form]);
-    };
-    const supreme = function () {
-      return deity.split(/[ ,]+/)[0];
-    };
-    const place = function (adj) {
-      const base = cells.burg[center] ? pack.burgs[cells.burg[center]].name : pack.states[cells.state[center]].name;
+  function generateReligionName(variety, form, deity, center) {
+    const {cells, cultures, burgs, states} = pack;
+
+    const random = () => Names.getCulture(cells.culture[center], null, null, "", 0);
+    const type = rw(types[form]);
+    const supreme = deity.split(/[ ,]+/)[0];
+    const culture = cultures[cells.culture[center]].name;
+
+    const place = adj => {
+      const burgId = cells.burg[center];
+      const stateId = cells.state[center];
+
+      const base = burgId ? burgs[burgId].name : states[stateId].name;
       let name = trimVowels(base.split(/[ ,]+/)[0]);
       return adj ? getAdjective(name) : name;
     };
-    const culture = function () {
-      return pack.cultures[cells.culture[center]].name;
-    };
 
-    const m = rw(methods);
-    if (m === "Random + type") return [random() + " " + type(), "global"];
+    const m = rw(namingMethods[variety]);
+    if (m === "Random + type") return [random() + " " + type, "global"];
     if (m === "Random + ism") return [trimVowels(random()) + "ism", "global"];
-    if (m === "Supreme + ism" && deity) return [trimVowels(supreme()) + "ism", "global"];
-    if (m === "Faith of + Supreme" && deity) return [ra(["Faith", "Way", "Path", "Word", "Witnesses"]) + " of " + supreme(), "global"];
+    if (m === "Supreme + ism" && deity) return [trimVowels(supreme) + "ism", "global"];
+    if (m === "Faith of + Supreme" && deity)
+      return [ra(["Faith", "Way", "Path", "Word", "Witnesses"]) + " of " + supreme, "global"];
     if (m === "Place + ism") return [place() + "ism", "state"];
-    if (m === "Culture + ism") return [trimVowels(culture()) + "ism", "culture"];
-    if (m === "Place + ian + type") return [place("adj") + " " + type(), "state"];
-    if (m === "Culture + type") return [culture() + " " + type(), "culture"];
+    if (m === "Culture + ism") return [trimVowels(culture) + "ism", "culture"];
+    if (m === "Place + ian + type") return [place("adj") + " " + type, "state"];
+    if (m === "Culture + type") return [culture + " " + type, "culture"];
+    if (m === "Burg + ian + type") return [`${place("adj")} ${type}`, "global"];
+    if (m === "Random + ian + type") return [`${getAdjective(random())} ${type}`, "global"];
+    if (m === "Type + of the + meaning") return [`${type} of the ${generateMeaning()}`, "global"];
     return [trimVowels(random()) + "ism", "global"]; // else
   }
 
-  function getCultName(form, center) {
-    const cells = pack.cells;
-    const type = function () {
-      return rw(types[form]);
-    };
-    const random = function () {
-      return trimVowels(Names.getCulture(cells.culture[center], null, null, "", 0).split(/[ ,]+/)[0]);
-    };
-    const burg = function () {
-      return trimVowels(pack.burgs[cells.burg[center]].name.split(/[ ,]+/)[0]);
-    };
-    if (cells.burg[center]) return burg() + "ian " + type();
-    if (Math.random() > 0.5) return random() + "ian " + type();
-    return type() + " of the " + generateMeaning();
-  }
-
-  return {generate, add, getDeityName, expandReligions, updateCultures};
+  return {generate, add, getDeityName, updateCultures, recalculate};
 })();

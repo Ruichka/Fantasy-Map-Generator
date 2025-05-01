@@ -11,51 +11,47 @@ function editUnits() {
     position: {my: "right top", at: "right-10 top+10", of: "svg", collision: "fit"}
   });
 
+  const renderScaleBar = () => {
+    drawScaleBar(scaleBar, scale);
+    fitScaleBar(scaleBar, svgWidth, svgHeight);
+  };
+
   // add listeners
-  document.getElementById("distanceUnitInput").addEventListener("change", changeDistanceUnit);
-  document.getElementById("distanceScaleOutput").addEventListener("input", changeDistanceScale);
-  document.getElementById("distanceScaleInput").addEventListener("change", changeDistanceScale);
-  document.getElementById("heightUnit").addEventListener("change", changeHeightUnit);
-  document.getElementById("heightExponentInput").addEventListener("input", changeHeightExponent);
-  document.getElementById("heightExponentOutput").addEventListener("input", changeHeightExponent);
-  document.getElementById("temperatureScale").addEventListener("change", changeTemperatureScale);
-  document.getElementById("barSizeOutput").addEventListener("input", drawScaleBar);
-  document.getElementById("barSizeInput").addEventListener("input", drawScaleBar);
-  document.getElementById("barLabel").addEventListener("input", drawScaleBar);
-  document.getElementById("barPosX").addEventListener("input", fitScaleBar);
-  document.getElementById("barPosY").addEventListener("input", fitScaleBar);
-  document.getElementById("barBackOpacity").addEventListener("input", changeScaleBarOpacity);
-  document.getElementById("barBackColor").addEventListener("input", changeScaleBarColor);
+  byId("distanceUnitInput").on("change", changeDistanceUnit);
+  byId("distanceScaleInput").on("change", changeDistanceScale);
+  byId("heightUnit").on("change", changeHeightUnit);
+  byId("heightExponentInput").on("input", changeHeightExponent);
+  byId("temperatureScale").on("change", changeTemperatureScale);
 
-  document.getElementById("populationRateOutput").addEventListener("input", changePopulationRate);
-  document.getElementById("populationRateInput").addEventListener("change", changePopulationRate);
-  document.getElementById("urbanizationOutput").addEventListener("input", changeUrbanizationRate);
-  document.getElementById("urbanizationInput").addEventListener("change", changeUrbanizationRate);
+  byId("populationRateInput").on("change", changePopulationRate);
+  byId("urbanizationInput").on("change", changeUrbanizationRate);
+  byId("urbanDensityInput").on("change", changeUrbanDensity);
 
-  document.getElementById("addLinearRuler").addEventListener("click", addRuler);
-  document.getElementById("addOpisometer").addEventListener("click", toggleOpisometerMode);
-  document.getElementById("addRouteOpisometer").addEventListener("click", toggleRouteOpisometerMode);
-  document.getElementById("addPlanimeter").addEventListener("click", togglePlanimeterMode);
-  document.getElementById("removeRulers").addEventListener("click", removeAllRulers);
-  document.getElementById("unitsRestore").addEventListener("click", restoreDefaultUnits);
+  byId("addLinearRuler").on("click", addRuler);
+  byId("addOpisometer").on("click", toggleOpisometerMode);
+  byId("addRouteOpisometer").on("click", toggleRouteOpisometerMode);
+  byId("addPlanimeter").on("click", togglePlanimeterMode);
+  byId("removeRulers").on("click", removeAllRulers);
+  byId("unitsRestore").on("click", restoreDefaultUnits);
 
   function changeDistanceUnit() {
     if (this.value === "custom_name") {
       prompt("Provide a custom name for a distance unit", {default: ""}, custom => {
         this.options.add(new Option(custom, custom, false, true));
         lock("distanceUnit");
-        drawScaleBar();
+        renderScaleBar();
         calculateFriendlyGridSize();
       });
       return;
     }
 
-    drawScaleBar();
+    renderScaleBar();
     calculateFriendlyGridSize();
   }
 
   function changeDistanceScale() {
-    drawScaleBar();
+    distanceScale = +this.value;
+    renderScaleBar();
     calculateFriendlyGridSize();
   }
 
@@ -70,19 +66,11 @@ function editUnits() {
 
   function changeHeightExponent() {
     calculateTemperatures();
-    if (layerIsOn("toggleTemp")) drawTemp();
+    if (layerIsOn("toggleTemperature")) drawTemperature();
   }
 
   function changeTemperatureScale() {
-    if (layerIsOn("toggleTemp")) drawTemp();
-  }
-
-  function changeScaleBarOpacity() {
-    scaleBar.select("rect").attr("opacity", this.value);
-  }
-
-  function changeScaleBarColor() {
-    scaleBar.select("rect").attr("fill", this.value);
+    if (layerIsOn("toggleTemperature")) drawTemperature();
   }
 
   function changePopulationRate() {
@@ -93,10 +81,13 @@ function editUnits() {
     urbanization = +this.value;
   }
 
+  function changeUrbanDensity() {
+    urbanDensity = +this.value;
+  }
+
   function restoreDefaultUnits() {
-    // distanceScale
-    document.getElementById("distanceScaleOutput").value = 3;
-    document.getElementById("distanceScaleInput").value = 3;
+    distanceScale = 3;
+    byId("distanceScaleInput").value = distanceScale;
     unlock("distanceScale");
 
     // units
@@ -113,35 +104,24 @@ function editUnits() {
     calculateFriendlyGridSize();
 
     // height exponent
-    heightExponentInput.value = heightExponentOutput.value = 1.8;
+    heightExponentInput.value = 1.8;
     localStorage.removeItem("heightExponent");
     calculateTemperatures();
 
-    // scale bar
-    barSizeOutput.value = barSizeInput.value = 2;
-    barLabel.value = "";
-    barBackOpacity.value = 0.2;
-    barBackColor.value = "#ffffff";
-    barPosX.value = barPosY.value = 99;
-
-    localStorage.removeItem("barSize");
-    localStorage.removeItem("barLabel");
-    localStorage.removeItem("barBackOpacity");
-    localStorage.removeItem("barBackColor");
-    localStorage.removeItem("barPosX");
-    localStorage.removeItem("barPosY");
-    drawScaleBar();
+    renderScaleBar();
 
     // population
-    populationRate = populationRateOutput.value = populationRateInput.value = 1000;
-    urbanization = urbanizationOutput.value = urbanizationInput.value = 1;
+    populationRate = populationRateInput.value = 1000;
+    urbanization = urbanizationInput.value = 1;
+    urbanDensity = urbanDensityInput.value = 10;
     localStorage.removeItem("populationRate");
     localStorage.removeItem("urbanization");
+    localStorage.removeItem("urbanDensity");
   }
 
   function addRuler() {
     if (!layerIsOn("toggleRulers")) toggleRulers();
-    const pt = document.getElementById("map").createSVGPoint();
+    const pt = byId("map").createSVGPoint();
     (pt.x = graphWidth / 2), (pt.y = graphHeight / 4);
     const p = pt.matrixTransform(viewbox.node().getScreenCTM().inverse());
     const dx = graphWidth / 4 / scale;
@@ -193,13 +173,15 @@ function editUnits() {
       tip("Draw a curve along routes to measure length. Hold Shift to measure away from roads.", true);
       unitsBottom.querySelectorAll(".pressed").forEach(button => button.classList.remove("pressed"));
       this.classList.add("pressed");
+
       viewbox.style("cursor", "crosshair").call(
         d3.drag().on("start", function () {
           const cells = pack.cells;
           const burgs = pack.burgs;
           const point = d3.mouse(this);
           const c = findCell(point[0], point[1]);
-          if (cells.road[c] || d3.event.sourceEvent.shiftKey) {
+
+          if (Routes.isConnected(c) || d3.event.sourceEvent.shiftKey) {
             const b = cells.burg[c];
             const x = b ? burgs[b].x : cells.p[c][0];
             const y = b ? burgs[b].y : cells.p[c][1];
@@ -208,7 +190,7 @@ function editUnits() {
             d3.event.on("drag", function () {
               const point = d3.mouse(this);
               const c = findCell(point[0], point[1]);
-              if (cells.road[c] || d3.event.sourceEvent.shiftKey) {
+              if (Routes.isConnected(c) || d3.event.sourceEvent.shiftKey) {
                 routeOpisometer.trackCell(c, true);
               }
             });
@@ -266,9 +248,8 @@ function editUnits() {
 
   function removeAllRulers() {
     if (!rulers.data.length) return;
-    alertMessage.innerHTML = `
-      Are you sure you want to remove all placed rulers?
-      <br>If you just want to hide rulers, toggle the Rulers layer off in Menu`;
+    alertMessage.innerHTML = /* html */ ` Are you sure you want to remove all placed rulers?
+      <br />If you just want to hide rulers, toggle the Rulers layer off in Menu`;
     $("#alert").dialog({
       resizable: false,
       title: "Remove all rulers",

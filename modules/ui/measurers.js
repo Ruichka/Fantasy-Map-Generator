@@ -16,12 +16,20 @@ class Rulers {
   fromString(string) {
     this.data = [];
 
+    const typeMap = {
+      Ruler: Ruler,
+      Opisometer: Opisometer,
+      RouteOpisometer: RouteOpisometer,
+      Planimeter: Planimeter
+    };
+
     const rulers = string.split("; ");
     for (const rulerString of rulers) {
       const [type, pointsString] = rulerString.split(": ");
+      if (!type || !pointsString) continue;
+
       const points = pointsString.split(" ").map(el => el.split(",").map(n => +n));
-      const Type = type === "Ruler" ? Ruler : type === "Opisometer" ? Opisometer : type === "RouteOpisometer" ? RouteOpisometer : type === "Planimeter" ? Planimeter : null;
-      this.create(Type, points);
+      this.create(typeMap[type], points);
     }
   }
 
@@ -58,7 +66,7 @@ class Measurer {
   }
 
   getDash() {
-    return rn(30 / distanceScaleInput.value, 2);
+    return rn(30 / distanceScale, 2);
   }
 
   drag() {
@@ -197,7 +205,7 @@ class Ruler extends Measurer {
 
   updateLabel() {
     const length = this.getLength();
-    const text = rn(length * distanceScaleInput.value) + " " + distanceUnitInput.value;
+    const text = rn(length * distanceScale) + " " + distanceUnitInput.value;
     const [x, y] = last(this.points);
     this.el.select("text").attr("x", x).attr("y", y).text(text);
   }
@@ -329,7 +337,7 @@ class Opisometer extends Measurer {
 
   updateLabel() {
     const length = this.el.select("path").node().getTotalLength();
-    const text = rn(length * distanceScaleInput.value) + " " + distanceUnitInput.value;
+    const text = rn(length * distanceScale) + " " + distanceUnitInput.value;
     const [x, y] = last(this.points);
     this.el.select("text").attr("x", x).attr("y", y).text(text);
   }
@@ -467,7 +475,7 @@ class RouteOpisometer extends Measurer {
 
   updateLabel() {
     const length = this.el.select("path").node().getTotalLength();
-    const text = rn(length * distanceScaleInput.value) + " " + distanceUnitInput.value;
+    const text = rn(length * distanceScale) + " " + distanceUnitInput.value;
     const [x, y] = last(this.points);
     this.el.select("text").attr("x", x).attr("y", y).text(text);
   }
@@ -478,9 +486,7 @@ class RouteOpisometer extends Measurer {
       const cells = pack.cells;
 
       const c = findCell(mousePoint[0], mousePoint[1]);
-      if (!cells.road[c] && !d3.event.sourceEvent.shiftKey) {
-        return;
-      }
+      if (!Routes.isConnected(c) && !d3.event.sourceEvent.shiftKey) return;
 
       context.trackCell(c, rigth);
     });
@@ -519,107 +525,37 @@ class Planimeter extends Measurer {
     if (this.points.length < 3) return;
 
     const polygonArea = rn(Math.abs(d3.polygonArea(this.points)));
-    const unit = areaUnit.value === "square" ? " " + distanceUnitInput.value + "²" : " " + areaUnit.value;
-    const area = si(polygonArea * distanceScaleInput.value ** 2) + " " + unit;
+    const area = si(getArea(polygonArea)) + " " + getAreaUnit();
     const c = polylabel([this.points], 1.0);
     this.el.select("text").attr("x", c[0]).attr("y", c[1]).text(area);
   }
 }
 
-// Scale bar
-function drawScaleBar() {
-  if (scaleBar.style("display") === "none") return; // no need to re-draw hidden element
-  scaleBar.selectAll("*").remove(); // fully redraw every time
+function createDefaultRuler() {
+  TIME && console.time("createDefaultRuler");
+  const {features, vertices} = pack;
 
-  const dScale = distanceScaleInput.value;
-  const unit = distanceUnitInput.value;
+  const areas = features.map(f => (f.land ? f.area || 0 : -Infinity));
+  const largestLand = areas.indexOf(Math.max(...areas));
+  const featureVertices = features[largestLand].vertices;
 
-  // calculate size
-  const init = 100; // actual length in pixels if scale, dScale and size = 1;
-  const size = +barSizeInput.value;
-  let val = (init * size * dScale) / scale; // bar length in distance unit
-  if (val > 900) val = rn(val, -3);
-  // round to 1000
-  else if (val > 90) val = rn(val, -2);
-  // round to 100
-  else if (val > 9) val = rn(val, -1);
-  // round to 10
-  else val = rn(val); // round to 1
-  const l = (val * scale) / dScale; // actual length in pixels on this scale
+  const MIN_X = 100;
+  const MAX_X = graphWidth - 100;
+  const MIN_Y = 100;
+  const MAX_Y = graphHeight - 100;
 
-  scaleBar
-    .append("line")
-    .attr("x1", 0.5)
-    .attr("y1", 0)
-    .attr("x2", l + size - 0.5)
-    .attr("y2", 0)
-    .attr("stroke-width", size)
-    .attr("stroke", "white");
-  scaleBar
-    .append("line")
-    .attr("x1", 0)
-    .attr("y1", size)
-    .attr("x2", l + size)
-    .attr("y2", size)
-    .attr("stroke-width", size)
-    .attr("stroke", "#3d3d3d");
-  const dash = size + " " + rn(l / 5 - size, 2);
-  scaleBar
-    .append("line")
-    .attr("x1", 0)
-    .attr("y1", 0)
-    .attr("x2", l + size)
-    .attr("y2", 0)
-    .attr("stroke-width", rn(size * 3, 2))
-    .attr("stroke-dasharray", dash)
-    .attr("stroke", "#3d3d3d");
+  let leftmostVertex = [graphWidth - MIN_X, graphHeight / 2];
+  let rightmostVertex = [MIN_X, graphHeight / 2];
 
-  const fontSize = rn(5 * size, 1);
-  scaleBar
-    .selectAll("text")
-    .data(d3.range(0, 6))
-    .enter()
-    .append("text")
-    .attr("x", d => rn((d * l) / 5, 2))
-    .attr("y", 0)
-    .attr("dy", "-.5em")
-    .attr("font-size", fontSize)
-    .text(d => rn((((d * l) / 5) * dScale) / scale) + (d < 5 ? "" : " " + unit));
-
-  if (barLabel.value !== "") {
-    scaleBar
-      .append("text")
-      .attr("x", (l + 1) / 2)
-      .attr("y", 2 * size)
-      .attr("dominant-baseline", "text-before-edge")
-      .attr("font-size", fontSize)
-      .text(barLabel.value);
+  for (const vertex of featureVertices) {
+    const [x, y] = vertices.p[vertex];
+    if (y < MIN_Y || y > MAX_Y) continue;
+    if (x < leftmostVertex[0] && x >= MIN_X) leftmostVertex = [x, y];
+    if (x > rightmostVertex[0] && x <= MAX_X) rightmostVertex = [x, y];
   }
 
-  const bbox = scaleBar.node().getBBox();
-  // append backbround rectangle
-  scaleBar
-    .insert("rect", ":first-child")
-    .attr("x", -10)
-    .attr("y", -20)
-    .attr("width", bbox.width + 10)
-    .attr("height", bbox.height + 15)
-    .attr("stroke-width", size)
-    .attr("stroke", "none")
-    .attr("filter", "url(#blur5)")
-    .attr("fill", barBackColor.value)
-    .attr("opacity", +barBackOpacity.value);
+  rulers = new Rulers();
+  rulers.create(Ruler, [leftmostVertex, rightmostVertex]);
 
-  fitScaleBar();
-}
-
-// fit ScaleBar to canvas size
-function fitScaleBar() {
-  if (!scaleBar.select("rect").size() || scaleBar.style("display") === "none") return;
-  const px = isNaN(+barPosX.value) ? 0.99 : barPosX.value / 100;
-  const py = isNaN(+barPosY.value) ? 0.99 : barPosY.value / 100;
-  const bbox = scaleBar.select("rect").node().getBBox();
-  const x = rn(svgWidth * px - bbox.width + 10),
-    y = rn(svgHeight * py - bbox.height + 20);
-  scaleBar.attr("transform", `translate(${x},${y})`);
+  TIME && console.timeEnd("createDefaultRuler");
 }

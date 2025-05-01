@@ -1,19 +1,46 @@
 "use strict";
 
 window.ThreeD = (function () {
-  // set default options
-  const options = {scale: 50, lightness: 0.7, shadow: 0.5, sun: {x: 100, y: 600, z: 1000}, rotateMesh: 0, rotateGlobe: 0.5, skyColor: "#9ecef5", waterColor: "#466eab", extendedWater: 0, labels3d: 0, resolution: 2};
+  const options = {
+    scale: 50,
+    lightness: 0.6,
+    shadow: 0.5,
+    sun: {x: 100, y: 800, z: 1000},
+    rotateMesh: 0,
+    rotateGlobe: 0.5,
+    skyColor: "#9ecef5",
+    waterColor: "#466eab",
+    sunColor: "#cccccc",
+    extendedWater: 0,
+    labels3d: 0,
+    wireframe: 0,
+    resolution: 2,
+    resolutionScale: 2048,
+    subdivide: 0
+  };
 
   // set variables
-  let Renderer, scene, camera, controls, animationFrame, material, texture, geometry, mesh, ambientLight, spotLight, waterPlane, waterMaterial, waterMesh, raycaster;
-
-  const drawCtx = document.createElement("canvas").getContext("2d");
-  const drawSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  document.body.appendChild(drawSVG);
+  let Renderer,
+    scene,
+    camera,
+    controls,
+    animationFrame,
+    material,
+    texture,
+    geometry,
+    mesh,
+    ambientLight,
+    spotLight,
+    waterPlane,
+    waterMaterial,
+    waterMesh,
+    raycaster;
 
   let labels = [];
   let icons = [];
   let lines = [];
+
+  const context2d = document.createElement("canvas").getContext("2d");
 
   // initiate 3d scene
   const create = async function (canvas, type = "viewMesh") {
@@ -69,11 +96,26 @@ window.ThreeD = (function () {
 
   const setScale = function (scale) {
     options.scale = scale;
-    geometry.vertices.forEach((v, i) => (v.z = getMeshHeight(i)));
+    let vertices = geometry.getAttribute("position");
+    for (let i = 0; i < vertices.count; i++) {
+      vertices.setZ(i, getMeshHeight(i));
+    }
+    geometry.setAttribute("position", vertices);
     geometry.verticesNeedUpdate = true;
     geometry.computeVertexNormals();
     geometry.verticesNeedUpdate = false;
 
+    redraw();
+  };
+
+  const setSunColor = function (color) {
+    options.sunColor = color;
+    spotLight.color = new THREE.Color(color);
+    render();
+  };
+
+  const setResolutionScale = function (scale) {
+    options.resolutionScale = scale;
     redraw();
   };
 
@@ -125,6 +167,16 @@ window.ThreeD = (function () {
     }
   };
 
+  const toggle3dSubdivision = function () {
+    options.subdivide = !options.subdivide;
+    redraw();
+  };
+
+  const toggleWireframe = function () {
+    options.wireframe = !options.wireframe;
+    redraw();
+  };
+
   const setColors = function (sky, water) {
     options.skyColor = sky;
     scene.background = scene.fog.color = new THREE.Color(sky);
@@ -150,32 +202,35 @@ window.ThreeD = (function () {
   };
 
   const saveOBJ = async function () {
-    downloadFile(await getOBJ(), getFileName() + ".obj", "text/plain;charset=UTF-8");
+    const objexporter = await OBJExporter();
+    const obj = await objexporter.parse(mesh);
+
+    downloadFile(obj, getFileName() + ".obj", "text/plain;charset=UTF-8");
   };
 
   // start 3d view and heightmap edit preview
   async function newMesh(canvas) {
     const loaded = await loadTHREE();
-    if (!loaded) {
-      tip("Cannot load 3d library", false, "error", 4000);
-      return false;
-    }
+    if (!loaded) return tip("Cannot load 3d library", false, "error", 4000);
 
     scene = new THREE.Scene();
 
     // light
     ambientLight = new THREE.AmbientLight(0xcccccc, options.lightness);
     scene.add(ambientLight);
-    spotLight = new THREE.SpotLight(0xcccccc, 0.8, 2000, 0.8, 0, 0);
+    spotLight = new THREE.SpotLight(options.sunColor, 0.8, 2000, 0.8, 0, 0);
     spotLight.position.set(options.sun.x, options.sun.y, options.sun.z);
     spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 2048;
+    spotLight.shadow.mapSize.height = 2048;
     scene.add(spotLight);
-    //scene.add(new THREE.SpotLightHelper(spotLight));
+    // scene.add(new THREE.SpotLightHelper(spotLight));
 
-    // Rendered
+    // Renderer
     Renderer = new THREE.WebGLRenderer({canvas, antialias: true, preserveDrawingBuffer: true});
     Renderer.setSize(canvas.width, canvas.height);
     Renderer.shadowMap.enabled = true;
+    Renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     if (options.extendedWater) extendWater(graphWidth, graphHeight);
     createMesh(graphWidth, graphHeight, grid.cellsX, grid.cellsY);
 
@@ -185,8 +240,11 @@ window.ThreeD = (function () {
 
     // controls
     controls = await OrbitControls(camera, canvas);
-    controls.enableKeys = false;
-    controls.minDistance = 10;
+    controls.listenToKeyEvents(window);
+    controls.zoomSpeed = 0.25;
+
+    controls.panSpeed = 0.5;
+    controls.minDistance = 100;
     controls.maxDistance = 1000;
     controls.maxPolarAngle = Math.PI / 2;
     controls.autoRotate = Boolean(options.rotateMesh);
@@ -194,13 +252,12 @@ window.ThreeD = (function () {
     if (controls.autoRotate) animate();
 
     controls.addEventListener("change", render);
-
     return true;
   }
 
   function textureToSprite(texture, width, height) {
     const map = new THREE.TextureLoader().load(texture);
-    map.anisotropy = Renderer.getMaxAnisotropy();
+    map.anisotropy = Renderer.capabilities.getMaxAnisotropy();
     const material = new THREE.SpriteMaterial({map});
 
     const sprite = new THREE.Sprite(material);
@@ -210,16 +267,20 @@ window.ThreeD = (function () {
   }
 
   async function createTextLabel({text, font, size, color, quality}) {
-    drawCtx.font = `${size * quality}px ${font}`;
-    drawCtx.canvas.width = drawCtx.measureText(text).width;
-    drawCtx.canvas.height = size * quality * 1.25; // 25% margin as text can overflow the font size
-    drawCtx.clearRect(0, 0, drawCtx.canvas.width, drawCtx.canvas.height);
+    context2d.font = `${size * quality}px ${font}`;
+    context2d.canvas.width = context2d.measureText(text).width;
+    context2d.canvas.height = size * quality * 1.25; // 25% margin as text can overflow the font size
+    context2d.clearRect(0, 0, context2d.canvas.width, context2d.canvas.height);
 
-    drawCtx.font = `${size * quality}px ${font}`;
-    drawCtx.fillStyle = color;
-    drawCtx.fillText(text, 0, size * quality);
+    context2d.font = `${size * quality}px ${font}`;
+    context2d.fillStyle = color;
+    context2d.fillText(text, 0, size * quality);
 
-    return textureToSprite(drawCtx.canvas.toDataURL(), drawCtx.canvas.width / quality, drawCtx.canvas.height / quality);
+    return textureToSprite(
+      context2d.canvas.toDataURL(),
+      context2d.canvas.width / quality,
+      context2d.canvas.height / quality
+    );
   }
 
   function get3dCoords(baseX, baseY) {
@@ -273,9 +334,23 @@ window.ThreeD = (function () {
     };
 
     const city_icon_material = new THREE.MeshPhongMaterial({color: cityOptions.iconColor});
+    city_icon_material.wireframe = options.wireframe;
     const town_icon_material = new THREE.MeshPhongMaterial({color: townOptions.iconColor});
-    const city_icon_geometry = new THREE.CylinderGeometry(cityOptions.iconSize * 2, cityOptions.iconSize * 2, cityOptions.iconSize, 16, 1);
-    const town_icon_geometry = new THREE.CylinderGeometry(townOptions.iconSize * 2, townOptions.iconSize * 2, townOptions.iconSize, 16, 1);
+    town_icon_material.wireframe = options.wireframe;
+    const city_icon_geometry = new THREE.CylinderGeometry(
+      cityOptions.iconSize * 2,
+      cityOptions.iconSize * 2,
+      cityOptions.iconSize,
+      16,
+      1
+    );
+    const town_icon_geometry = new THREE.CylinderGeometry(
+      townOptions.iconSize * 2,
+      townOptions.iconSize * 2,
+      townOptions.iconSize,
+      16,
+      1
+    );
     const line_material = new THREE.LineBasicMaterial({color: cityOptions.iconColor});
 
     // burg labels
@@ -298,7 +373,7 @@ window.ThreeD = (function () {
       }
 
       // icons
-      if (layerIsOn("toggleIcons")) {
+      if (layerIsOn("toggleBurgIcons")) {
         const geometry = isCity ? city_icon_geometry : town_icon_geometry;
         const material = isCity ? city_icon_material : town_icon_material;
         const iconMesh = new THREE.Mesh(geometry, material);
@@ -364,31 +439,78 @@ window.ThreeD = (function () {
     lines = [];
   }
 
+  async function createMeshTextureUrl() {
+    return new Promise(async (resolve, reject) => {
+      const url = await getMapURL("mesh", {
+        noLabels: options.labels3d,
+        noWater: options.extendedWater,
+        noViewbox: true,
+        fullMap: true
+      });
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = options.resolutionScale;
+      canvas.height = options.resolutionScale;
+      const img = new Image();
+      img.src = url;
+
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+          const blobObj = window.URL.createObjectURL(blob);
+          window.setTimeout(() => {
+            canvas.remove();
+            window.URL.revokeObjectURL(blobObj);
+          }, 100);
+          resolve(blobObj);
+        });
+      };
+    });
+  }
   // create a mesh from pixel data
   async function createMesh(width, height, segmentsX, segmentsY) {
-    const mapOptions = {
-      noLabels: options.labels3d,
-      noWater: options.extendedWater
-    };
-    const url = await getMapURL("mesh", mapOptions);
-    window.setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-
     if (texture) texture.dispose();
-    texture = new THREE.TextureLoader().load(url, render);
-    texture.needsUpdate = true;
+    if (!options.wireframe) {
+      texture = new THREE.TextureLoader().load(await createMeshTextureUrl(), render);
+      texture.needsUpdate = true;
+      texture.anisotropy = Renderer.capabilities.getMaxAnisotropy();
+    }
 
     if (material) material.dispose();
     material = new THREE.MeshLambertMaterial();
-    material.map = texture;
-    material.transparent = true;
+
+    if (options.wireframe) {
+      material.wireframe = true;
+    } else {
+      material.map = texture;
+      material.transparent = true;
+    }
 
     if (geometry) geometry.dispose();
     geometry = new THREE.PlaneGeometry(width, height, segmentsX - 1, segmentsY - 1);
-    geometry.vertices.forEach((v, i) => (v.z = getMeshHeight(i)));
-    geometry.computeVertexNormals();
 
+    let vertices = geometry.getAttribute("position");
+    for (let i = 0; i < vertices.count; i++) {
+      vertices.setZ(i, getMeshHeight(i));
+    }
+
+    geometry.setAttribute("position", vertices);
+    geometry.computeVertexNormals();
     if (mesh) scene.remove(mesh);
-    mesh = new THREE.Mesh(geometry, material);
+    if (options.subdivide) {
+      await loadLoopSubdivision();
+      const subdivideParams = {
+        split: true,
+        uvSmooth: false,
+        preserveEdges: true,
+        flatOnly: false,
+        maxTriangles: Infinity
+      };
+      const smoothGeometry = loopSubdivision.modify(geometry, 1, subdivideParams);
+      mesh = new THREE.Mesh(smoothGeometry, material);
+    } else {
+      mesh = new THREE.Mesh(geometry, material);
+    }
     mesh.rotation.x = -Math.PI / 2;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -420,11 +542,7 @@ window.ThreeD = (function () {
 
   async function update3dTexture() {
     if (texture) texture.dispose();
-    const mapOptions = {
-      noLabels: options.labels3d,
-      noWater: options.extendedWater
-    };
-    const url = await getMapURL("mesh", mapOptions);
+    const url = await createMeshTextureUrl();
     window.setTimeout(() => window.URL.revokeObjectURL(url), 4000);
     texture = new THREE.TextureLoader().load(url, render);
     material.map = texture;
@@ -439,7 +557,10 @@ window.ThreeD = (function () {
 
     // scene
     scene = new THREE.Scene();
-    scene.background = new THREE.TextureLoader().load("https://i0.wp.com/azgaar.files.wordpress.com/2019/10/stars-1.png", render);
+    scene.background = new THREE.TextureLoader().load(
+      "https://i0.wp.com/azgaar.files.wordpress.com/2019/10/stars-1.png",
+      render
+    );
 
     // Renderer
     Renderer = new THREE.WebGLRenderer({canvas, antialias: true, preserveDrawingBuffer: true});
@@ -455,7 +576,7 @@ window.ThreeD = (function () {
 
     // controls
     controls = await OrbitControls(camera, Renderer.domElement);
-    controls.enableKeys = false;
+    controls.zoomSpeed = 0.25;
     controls.minDistance = 1.8;
     controls.maxDistance = 10;
     controls.autoRotate = Boolean(options.rotateGlobe);
@@ -503,13 +624,7 @@ window.ThreeD = (function () {
       material.map = texture;
       if (addMesh) addGlobe3dMesh();
     };
-    img2.src = await getMapURL("mesh", {globe: true});
-  }
-
-  async function getOBJ() {
-    const objexporter = await OBJExporter();
-    const data = await objexporter.parse(mesh);
-    return data;
+    img2.src = await getMapURL("mesh", {noScaleBar: true, fullMap: true, noVignette: true});
   }
 
   function addGlobe3dMesh() {
@@ -554,6 +669,17 @@ window.ThreeD = (function () {
     });
   }
 
+  function loadLoopSubdivision() {
+    if (window.loopSubdivision) return Promise.resolve(true);
+
+    return new Promise(resolve => {
+      const script = document.createElement("script");
+      script.src = "libs/loopsubdivison.min.js";
+      document.head.append(script);
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+    });
+  }
   function OrbitControls(camera, domElement) {
     if (THREE.OrbitControls) return new THREE.OrbitControls(camera, domElement);
 
@@ -571,12 +697,32 @@ window.ThreeD = (function () {
 
     return new Promise(resolve => {
       const script = document.createElement("script");
-      script.src = "libs/objexporter.min.js";
+      script.src = "libs/objexporter.min.js?v=1.89.35";
       document.head.append(script);
       script.onload = () => resolve(new THREE.OBJExporter());
       script.onerror = () => resolve(false);
     });
   }
 
-  return {create, redraw, update, stop, options, setScale, setLightness, setSun, setRotation, toggleLabels, toggleSky, setResolution, setColors, saveScreenshot, saveOBJ};
+  return {
+    create,
+    redraw,
+    update,
+    stop,
+    options,
+    setSunColor,
+    setScale,
+    setResolutionScale,
+    setLightness,
+    setSun,
+    setRotation,
+    toggleLabels,
+    toggle3dSubdivision,
+    toggleWireframe,
+    toggleSky,
+    setResolution,
+    setColors,
+    saveScreenshot,
+    saveOBJ
+  };
 })();

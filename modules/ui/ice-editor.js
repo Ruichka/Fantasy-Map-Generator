@@ -12,7 +12,8 @@ function editIce() {
   ice.selectAll("*").classed("draggable", true).call(d3.drag().on("drag", dragElement));
 
   $("#iceEditor").dialog({
-    title: "Edit "+type, resizable: false,
+    title: "Edit " + type,
+    resizable: false,
     position: {my: "center top+60", at: "top", of: d3.event, collision: "fit"},
     close: closeEditor
   });
@@ -30,8 +31,9 @@ function editIce() {
   function randomizeShape() {
     const c = grid.points[+elSelected.attr("cell")];
     const s = +elSelected.attr("size");
-    const i = ra(grid.cells.i), cn = grid.points[i];
-    const poly = getGridPolygon(i).map(p => [p[0]-cn[0], p[1]-cn[1]]);
+    const i = ra(grid.cells.i),
+      cn = grid.points[i];
+    const poly = getGridPolygon(i).map(p => [p[0] - cn[0], p[1] - cn[1]]);
     const points = poly.map(p => [rn(c[0] + p[0] * s, 2), rn(c[1] + p[1] * s, 2)]);
     elSelected.attr("points", points);
   }
@@ -39,10 +41,13 @@ function editIce() {
   function changeSize() {
     const c = grid.points[+elSelected.attr("cell")];
     const s = +elSelected.attr("size");
-    const flat = elSelected.attr("points").split(",").map(el => +el);
+    const flat = elSelected
+      .attr("points")
+      .split(",")
+      .map(el => +el);
     const pairs = [];
-    while (flat.length) pairs.push(flat.splice(0,2));
-    const poly = pairs.map(p => [(p[0]-c[0]) / s, (p[1]-c[1]) / s]);
+    while (flat.length) pairs.push(flat.splice(0, 2));
+    const poly = pairs.map(p => [(p[0] - c[0]) / s, (p[1] - c[1]) / s]);
     const size = +this.value;
     const points = poly.map(p => [rn(c[0] + p[0] * size, 2), rn(c[1] + p[1] * size, 2)]);
     elSelected.attr("points", points).attr("size", size);
@@ -60,39 +65,45 @@ function editIce() {
   }
 
   function addIcebergOnClick() {
-    const point = d3.mouse(this);
-    const i = findGridCell(point[0], point[1]);
-    const c = grid.points[i];
-    const s = +document.getElementById("iceSize").value;
+    const [x, y] = d3.mouse(this);
+    const i = findGridCell(x, y, grid);
+    const [cx, cy] = grid.points[i];
+    const size = +document.getElementById("iceSize")?.value || 1;
 
-    const points = getGridPolygon(i).map(p => [(p[0] + (c[0]-p[0]) / s)|0, (p[1] + (c[1]-p[1]) / s)|0]);
-    const iceberg = ice.append("polygon").attr("points", points).attr("cell", i).attr("size", s);
+    const points = getGridPolygon(i).map(([x, y]) => [rn(lerp(cx, x, size), 2), rn(lerp(cy, y, size), 2)]);
+    const iceberg = ice.append("polygon").attr("points", points).attr("cell", i).attr("size", size);
     iceberg.call(d3.drag().on("drag", dragElement));
     if (d3.event.shiftKey === false) toggleAdd();
   }
 
   function removeIce() {
     const type = elSelected.attr("type") ? "Glacier" : "Iceberg";
-    alertMessage.innerHTML = `Are you sure you want to remove the ${type}?`;
-    $("#alert").dialog({resizable: false, title: "Remove "+type,
+    alertMessage.innerHTML = /* html */ `Are you sure you want to remove the ${type}?`;
+    $("#alert").dialog({
+      resizable: false,
+      title: "Remove " + type,
       buttons: {
-        Remove: function() {
+        Remove: function () {
           $(this).dialog("close");
           elSelected.remove();
           $("#iceEditor").dialog("close");
         },
-        Cancel: function() {$(this).dialog("close");}
+        Cancel: function () {
+          $(this).dialog("close");
+        }
       }
     });
   }
 
   function dragElement() {
     const tr = parseTransform(this.getAttribute("transform"));
-    const dx = +tr[0] - d3.event.x, dy = +tr[1] - d3.event.y;
+    const dx = +tr[0] - d3.event.x,
+      dy = +tr[1] - d3.event.y;
 
-    d3.event.on("drag", function() {
-      const x = d3.event.x, y = d3.event.y;
-      this.setAttribute("transform", `translate(${(dx+x)},${(dy+y)})`);
+    d3.event.on("drag", function () {
+      const x = d3.event.x,
+        y = d3.event.y;
+      this.setAttribute("transform", `translate(${dx + x},${dy + y})`);
     });
   }
 

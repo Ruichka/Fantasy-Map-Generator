@@ -2,8 +2,8 @@
 "use strict";
 
 // add available filters to lists
-void (function addFilters() {
-  const filters = Array.from(document.getElementById("filters").querySelectorAll("filter"));
+{
+  const filters = Array.from(byId("filters").querySelectorAll("filter"));
   const emptyOption = '<option value="" selected>None</option>';
   const options = filters.map(filter => {
     const id = filter.getAttribute("id");
@@ -12,12 +12,13 @@ void (function addFilters() {
   });
   const allOptions = emptyOption + options.join("");
 
-  document.getElementById("styleFilterInput").innerHTML = allOptions;
-  document.getElementById("styleStatesBodyFilter").innerHTML = allOptions;
-})();
+  byId("styleFilterInput").innerHTML = allOptions;
+  byId("styleStatesBodyFilter").innerHTML = allOptions;
+  byId("styleScaleBarBackgroundFilter").innerHTML = allOptions;
+}
 
 // store some style inputs as options
-styleElements.addEventListener("change", function (ev) {
+styleElements.on("change", function (ev) {
   if (ev.target.dataset.stored) lock(ev.target.dataset.stored);
 });
 
@@ -31,88 +32,178 @@ function editStyle(element, group) {
 
   styleElementSelect.classList.add("glow");
   if (group) styleGroupSelect.classList.add("glow");
+
   setTimeout(() => {
     styleElementSelect.classList.remove("glow");
     if (group) styleGroupSelect.classList.remove("glow");
   }, 1500);
 }
 
+// Color schemes
+const heightmapColorSchemes = {
+  bright: d3.scaleSequential(d3.interpolateSpectral),
+  light: d3.scaleSequential(d3.interpolateRdYlGn),
+  natural: d3.scaleSequential(d3.interpolateRgbBasis(["white", "#EEEECC", "tan", "green", "teal"])),
+  green: d3.scaleSequential(d3.interpolateGreens),
+  olive: d3.scaleSequential(d3.interpolateRgbBasis(["#ffffff", "#cea48d", "#d5b085", "#0c2c19", "#151320"])),
+  livid: d3.scaleSequential(d3.interpolateRgbBasis(["#BBBBDD", "#2A3440", "#17343B", "#0A1E24"])),
+  monochrome: d3.scaleSequential(d3.interpolateGreys)
+};
+
+// add default color schemes to the list of options
+byId("styleHeightmapScheme").innerHTML = Object.keys(heightmapColorSchemes)
+  .map(scheme => `<option value="${scheme}">${scheme}</option>`)
+  .join("");
+
+function addCustomColorScheme(scheme) {
+  const stops = scheme.split(",");
+  heightmapColorSchemes[scheme] = d3.scaleSequential(d3.interpolateRgbBasis(stops));
+  byId("styleHeightmapScheme").options.add(new Option(scheme, scheme, false, true));
+}
+
+function getColorScheme(scheme = "bright") {
+  if (!(scheme in heightmapColorSchemes)) {
+    const colors = scheme.split(",");
+    heightmapColorSchemes[scheme] = d3.scaleSequential(d3.interpolateRgbBasis(colors));
+  }
+
+  return heightmapColorSchemes[scheme];
+}
+
+function getColor(value, scheme = getColorScheme("bright")) {
+  return scheme(1 - (value < 20 ? value - 5 : value) / 100);
+}
+
 // Toggle style sections on element select
-styleElementSelect.addEventListener("change", selectStyleElement);
+styleElementSelect.on("change", selectStyleElement);
+
 function selectStyleElement() {
-  const sel = styleElementSelect.value;
-  let el = d3.select("#" + sel);
+  const styleElement = styleElementSelect.value;
+  let el = d3.select("#" + styleElement);
 
   styleElements.querySelectorAll("tbody").forEach(e => (e.style.display = "none")); // hide all sections
 
   // show alert line if layer is not visible
-  const isLayerOff = sel !== "ocean" && (el.style("display") === "none" || !el.selectAll("*").size());
+  const isLayerOff = styleElement !== "ocean" && (el.style("display") === "none" || !el.selectAll("*").size());
   styleIsOff.style.display = isLayerOff ? "block" : "none";
 
   // active group element
-  const group = styleGroupSelect.value;
-  if (["routes", "labels", "coastline", "lakes", "anchors", "burgIcons", "borders"].includes(sel)) {
-    const gEl = group && el.select("#" + group);
-    el = group && gEl.size() ? gEl : el.select("g");
+  if (["routes", "labels", "coastline", "lakes", "anchors", "burgIcons", "borders", "terrs"].includes(styleElement)) {
+    const group = styleGroupSelect.value;
+    const defaultGroupSelector = styleElement === "terrs" ? "#landHeights" : "g";
+    el = group && el.select("#" + group).size() ? el.select("#" + group) : el.select(defaultGroupSelector);
   }
 
   // opacity
-  if (!["landmass", "ocean", "regions", "legend"].includes(sel)) {
+  if (!["landmass", "ocean", "regions", "legend"].includes(styleElement)) {
     styleOpacity.style.display = "block";
-    styleOpacityInput.value = styleOpacityOutput.value = el.attr("opacity") || 1;
+    styleOpacityInput.value = el.attr("opacity") || 1;
   }
 
   // filter
-  if (!["landmass", "legend", "regions"].includes(sel)) {
+  if (!["landmass", "legend", "regions", "scaleBar"].includes(styleElement)) {
     styleFilter.style.display = "block";
     styleFilterInput.value = el.attr("filter") || "";
   }
 
   // fill
-  if (["rivers", "lakes", "landmass", "prec", "ice", "fogging"].includes(sel)) {
+  if (["rivers", "lakes", "landmass", "prec", "ice", "fogging", "scaleBar", "vignette"].includes(styleElement)) {
     styleFill.style.display = "block";
     styleFillInput.value = styleFillOutput.value = el.attr("fill");
   }
 
   // stroke color and width
-  if (["armies", "routes", "lakes", "borders", "cults", "relig", "cells", "coastline", "prec", "ice", "icons", "coordinates", "zones", "gridOverlay"].includes(sel)) {
+  if (
+    [
+      "armies",
+      "biomes",
+      "borders",
+      "cells",
+      "coastline",
+      "coordinates",
+      "cults",
+      "gridOverlay",
+      "ice",
+      "icons",
+      "lakes",
+      "prec",
+      "relig",
+      "routes",
+      "zones"
+    ].includes(styleElement)
+  ) {
     styleStroke.style.display = "block";
     styleStrokeInput.value = styleStrokeOutput.value = el.attr("stroke");
     styleStrokeWidth.style.display = "block";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || "";
+    styleStrokeWidthInput.value = el.attr("stroke-width") || 0;
   }
 
   // stroke dash
-  if (["routes", "borders", "temperature", "legend", "population", "coordinates", "zones", "gridOverlay"].includes(sel)) {
+  if (
+    [
+      "borders",
+      "cells",
+      "coordinates",
+      "gridOverlay",
+      "legend",
+      "population",
+      "routes",
+      "temperature",
+      "zones"
+    ].includes(styleElement)
+  ) {
     styleStrokeDash.style.display = "block";
     styleStrokeDasharrayInput.value = el.attr("stroke-dasharray") || "";
     styleStrokeLinecapInput.value = el.attr("stroke-linecap") || "inherit";
   }
 
   // clipping
-  if (["cells", "gridOverlay", "coordinates", "compass", "terrain", "temperature", "routes", "texture", "biomes", "zones"].includes(sel)) {
+  if (
+    [
+      "biomes",
+      "cells",
+      "compass",
+      "coordinates",
+      "gridOverlay",
+      "population",
+      "prec",
+      "routes",
+      "temperature",
+      "terrain",
+      "texture",
+      "zones"
+    ].includes(styleElement)
+  ) {
     styleClipping.style.display = "block";
     styleClippingInput.value = el.attr("mask") || "";
   }
 
   // show specific sections
-  if (sel === "texture") styleTexture.style.display = "block";
-
-  if (sel === "terrs") {
-    styleHeightmap.style.display = "block";
-    styleHeightmapScheme.value = terrs.attr("scheme");
-    styleHeightmapTerracingInput.value = styleHeightmapTerracingOutput.value = terrs.attr("terracing");
-    styleHeightmapSkipInput.value = styleHeightmapSkipOutput.value = terrs.attr("skip");
-    styleHeightmapSimplificationInput.value = styleHeightmapSimplificationOutput.value = terrs.attr("relax");
-    styleHeightmapCurve.value = terrs.attr("curve");
+  if (styleElement === "texture") {
+    styleTexture.style.display = "block";
+    styleTextureShiftX.value = el.attr("data-x") || 0;
+    styleTextureShiftY.value = el.attr("data-y") || 0;
+    updateTextureSelectValue(el.attr("data-href"));
   }
 
-  if (sel === "markers") {
+  if (styleElement === "terrs") {
+    styleHeightmap.style.display = "block";
+    styleHeightmapRenderOceanOption.style.display = el.attr("id") === "oceanHeights" ? "block" : "none";
+    styleHeightmapRenderOcean.checked = +el.attr("data-render");
+
+    styleHeightmapScheme.value = el.attr("scheme");
+    styleHeightmapTerracing.value = el.attr("terracing");
+    styleHeightmapSkip.value = el.attr("skip");
+    styleHeightmapSimplification.value = el.attr("relax");
+    styleHeightmapCurve.value = el.attr("curve");
+  }
+
+  if (styleElement === "markers") {
     styleMarkers.style.display = "block";
     styleRescaleMarkers.checked = +markers.attr("rescale");
   }
 
-  if (sel === "gridOverlay") {
+  if (styleElement === "gridOverlay") {
     styleGrid.style.display = "block";
     styleGridType.value = el.attr("type");
     styleGridScale.value = el.attr("scale") || 1;
@@ -121,71 +212,73 @@ function selectStyleElement() {
     calculateFriendlyGridSize();
   }
 
-  if (sel === "compass") {
+  if (styleElement === "compass") {
     styleCompass.style.display = "block";
     const tr = parseTransform(compass.select("use").attr("transform"));
     styleCompassShiftX.value = tr[0];
     styleCompassShiftY.value = tr[1];
-    styleCompassSizeInput.value = styleCompassSizeOutput.value = tr[2];
+    styleCompassSizeInput.value = tr[2];
   }
 
-  if (sel === "terrain") {
+  if (styleElement === "terrain") {
     styleRelief.style.display = "block";
-    styleReliefSizeOutput.innerHTML = styleReliefSizeInput.value = terrain.attr("size");
-    styleReliefDensityOutput.innerHTML = styleReliefDensityInput.value = terrain.attr("density");
+    styleReliefSize.value = terrain.attr("size") || 1;
+    styleReliefDensity.value = terrain.attr("density") || 0.4;
     styleReliefSet.value = terrain.attr("set");
   }
 
-  if (sel === "population") {
+  if (styleElement === "population") {
     stylePopulation.style.display = "block";
-    stylePopulationRuralStrokeInput.value = stylePopulationRuralStrokeOutput.value = population.select("#rural").attr("stroke");
-    stylePopulationUrbanStrokeInput.value = stylePopulationUrbanStrokeOutput.value = population.select("#urban").attr("stroke");
+    stylePopulationRuralStrokeInput.value = stylePopulationRuralStrokeOutput.value = population
+      .select("#rural")
+      .attr("stroke");
+    stylePopulationUrbanStrokeInput.value = stylePopulationUrbanStrokeOutput.value = population
+      .select("#urban")
+      .attr("stroke");
     styleStrokeWidth.style.display = "block";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || "";
+    styleStrokeWidthInput.value = el.attr("stroke-width") || 0;
   }
 
-  if (sel === "regions") {
+  if (styleElement === "regions") {
     styleStates.style.display = "block";
-    styleStatesBodyOpacity.value = styleStatesBodyOpacityOutput.value = statesBody.attr("opacity") || 1;
+    styleStatesBodyOpacity.value = statesBody.attr("opacity") || 1;
     styleStatesBodyFilter.value = statesBody.attr("filter") || "";
-    styleStatesHaloWidth.value = styleStatesHaloWidthOutput.value = statesHalo.attr("data-width") || 10;
-    styleStatesHaloOpacity.value = styleStatesHaloOpacityOutput.value = statesHalo.attr("opacity") || 1;
-    const blur = parseFloat(statesHalo.attr("filter")?.match(/blur\(([^)]+)\)/)?.[1]) || 0;
-    styleStatesHaloBlur.value = styleStatesHaloBlurOutput.value = blur;
+    styleStatesHaloWidth.value = statesHalo.attr("data-width") || 10;
+    styleStatesHaloOpacity.value = statesHalo.attr("opacity") || 1;
+    styleStatesHaloBlur.value = parseFloat(statesHalo.attr("filter")?.match(/blur\(([^)]+)\)/)?.[1]) || 0;
   }
 
-  if (sel === "labels") {
+  if (styleElement === "labels") {
     styleFill.style.display = "block";
     styleStroke.style.display = "block";
     styleStrokeWidth.style.display = "block";
-    loadDefaultFonts();
-    styleFont.style.display = "block";
+    styleLetterSpacing.style.display = "block";
+
     styleShadow.style.display = "block";
     styleSize.style.display = "block";
     styleVisibility.style.display = "block";
     styleFillInput.value = styleFillOutput.value = el.attr("fill") || "#3e3e4b";
     styleStrokeInput.value = styleStrokeOutput.value = el.attr("stroke") || "#3a3a3a";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || 0;
+    styleStrokeWidthInput.value = el.attr("stroke-width") || 0;
+    styleLetterSpacingInput.value = el.attr("letter-spacing") || 0;
     styleShadowInput.value = el.style("text-shadow") || "white 0 0 4px";
-    styleSelectFont.value = fonts.indexOf(el.attr("data-font"));
-    styleInputFont.style.display = "none";
-    styleInputFont.value = "";
+
+    styleFont.style.display = "block";
+    styleSelectFont.value = el.attr("font-family");
     styleFontSize.value = el.attr("data-size");
   }
 
-  if (sel === "provs") {
+  if (styleElement === "provs") {
     styleFill.style.display = "block";
-    loadDefaultFonts();
-    styleFont.style.display = "block";
     styleSize.style.display = "block";
     styleFillInput.value = styleFillOutput.value = el.attr("fill") || "#111111";
-    styleSelectFont.value = fonts.indexOf(el.attr("data-font"));
-    styleInputFont.style.display = "none";
-    styleInputFont.value = "";
-    styleFontSize.value = el.attr("data-size");
+
+    styleFont.style.display = "block";
+    styleSelectFont.value = el.attr("font-family");
+    styleFontSize.value = el.attr("font-size");
   }
 
-  if (sel == "burgIcons") {
+  if (styleElement == "burgIcons") {
     styleFill.style.display = "block";
     styleStroke.style.display = "block";
     styleStrokeWidth.style.display = "block";
@@ -193,81 +286,83 @@ function selectStyleElement() {
     styleRadius.style.display = "block";
     styleFillInput.value = styleFillOutput.value = el.attr("fill") || "#ffffff";
     styleStrokeInput.value = styleStrokeOutput.value = el.attr("stroke") || "#3e3e4b";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || 0.24;
+    styleStrokeWidthInput.value = el.attr("stroke-width") || 0.24;
     styleStrokeDasharrayInput.value = el.attr("stroke-dasharray") || "";
     styleStrokeLinecapInput.value = el.attr("stroke-linecap") || "inherit";
     styleRadiusInput.value = el.attr("size") || 1;
   }
 
-  if (sel == "anchors") {
+  if (styleElement == "anchors") {
     styleFill.style.display = "block";
     styleStroke.style.display = "block";
     styleStrokeWidth.style.display = "block";
     styleIconSize.style.display = "block";
     styleFillInput.value = styleFillOutput.value = el.attr("fill") || "#ffffff";
     styleStrokeInput.value = styleStrokeOutput.value = el.attr("stroke") || "#3e3e4b";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || 0.24;
+    styleStrokeWidthInput.value = el.attr("stroke-width") || 0.24;
     styleIconSizeInput.value = el.attr("size") || 2;
   }
 
-  if (sel === "legend") {
+  if (styleElement === "legend") {
     styleStroke.style.display = "block";
     styleStrokeWidth.style.display = "block";
-    loadDefaultFonts();
-    styleFont.style.display = "block";
     styleSize.style.display = "block";
 
     styleLegend.style.display = "block";
-    styleLegendColItemsOutput.value = styleLegendColItems.value = el.attr("data-columns");
-    styleLegendBackOutput.value = styleLegendBack.value = el.select("#legendBox").attr("fill");
-    styleLegendOpacityOutput.value = styleLegendOpacity.value = el.select("#legendBox").attr("fill-opacity");
+    styleLegendColItems.value = el.attr("data-columns");
+    const legendBox = el.select("#legendBox");
+    styleLegendBack.value = styleLegendBackOutput.value = legendBox.size() ? legendBox.attr("fill") : "#ffffff";
+    styleLegendOpacity.value = legendBox.size() ? legendBox.attr("fill-opacity") : 1;
 
     styleStrokeInput.value = styleStrokeOutput.value = el.attr("stroke") || "#111111";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || 0.5;
-    styleSelectFont.value = fonts.indexOf(el.attr("data-font"));
-    styleInputFont.style.display = "none";
-    styleInputFont.value = "";
+    styleStrokeWidthInput.value = el.attr("stroke-width") || 0.5;
+
+    styleFont.style.display = "block";
+    styleSelectFont.value = el.attr("font-family");
     styleFontSize.value = el.attr("data-size");
   }
 
-  if (sel === "ocean") {
+  if (styleElement === "ocean") {
     styleOcean.style.display = "block";
     styleOceanFill.value = styleOceanFillOutput.value = oceanLayers.select("#oceanBase").attr("fill");
-    styleOceanPattern.value = document.getElementById("oceanicPattern")?.getAttribute("href");
-    styleOceanPatternOpacity.value = styleOceanPatternOpacityOutput.value = document.getElementById("oceanicPattern").getAttribute("opacity") || 1;
+    styleOceanPattern.value = byId("oceanicPattern")?.getAttribute("href");
+    styleOceanPatternOpacity.value = byId("oceanicPattern").getAttribute("opacity") || 1;
     outlineLayers.value = oceanLayers.attr("layers");
   }
 
-  if (sel === "temperature") {
+  if (styleElement === "temperature") {
     styleStrokeWidth.style.display = "block";
     styleTemperature.style.display = "block";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || "";
-    styleTemperatureFillOpacityInput.value = styleTemperatureFillOpacityOutput.value = el.attr("fill-opacity") || 0.1;
+    styleStrokeWidthInput.value = el.attr("stroke-width") || "";
+    styleTemperatureFillOpacityInput.value = el.attr("fill-opacity") || 0.1;
     styleTemperatureFillInput.value = styleTemperatureFillOutput.value = el.attr("fill") || "#000";
-    styleTemperatureFontSizeInput.value = styleTemperatureFontSizeOutput.value = el.attr("font-size") || "8px";
+    styleTemperatureFontSizeInput.value = el.attr("font-size") || "8px";
   }
 
-  if (sel === "coordinates") {
+  if (styleElement === "coordinates") {
     styleSize.style.display = "block";
     styleFontSize.value = el.attr("data-size");
   }
 
-  if (sel === "armies") {
+  if (styleElement === "armies") {
     styleArmies.style.display = "block";
-    styleArmiesFillOpacity.value = styleArmiesFillOpacityOutput.value = el.attr("fill-opacity");
-    styleArmiesSize.value = styleArmiesSizeOutput.value = el.attr("box-size");
+    styleArmiesFillOpacity.value = el.attr("fill-opacity");
+    styleArmiesSize.value = el.attr("box-size");
   }
 
-  if (sel === "emblems") {
+  if (styleElement === "emblems") {
     styleEmblems.style.display = "block";
     styleStrokeWidth.style.display = "block";
-    styleStrokeWidthInput.value = styleStrokeWidthOutput.value = el.attr("stroke-width") || 1;
+    styleStrokeWidthInput.value = el.attr("stroke-width") || 1;
+    emblemsStateSizeInput.value = emblems.select("#stateEmblems").attr("data-size") || 1;
+    emblemsProvinceSizeInput.value = emblems.select("#provinceEmblems").attr("data-size") || 1;
+    emblemsBurgSizeInput.value = emblems.select("#burgEmblems").attr("data-size") || 1;
   }
 
   // update group options
   styleGroupSelect.options.length = 0; // remove all options
-  if (["routes", "labels", "coastline", "lakes", "anchors", "burgIcons", "borders"].includes(sel)) {
-    const groups = document.getElementById(sel).querySelectorAll("g");
+  if (["routes", "labels", "coastline", "lakes", "anchors", "burgIcons", "borders", "terrs"].includes(styleElement)) {
+    const groups = byId(styleElement).querySelectorAll("g");
     groups.forEach(el => {
       if (el.id === "burgLabels") return;
       const option = new Option(`${el.id} (${el.childElementCount})`, el.id, false, false);
@@ -276,95 +371,151 @@ function selectStyleElement() {
     styleGroupSelect.value = el.attr("id");
     styleGroup.style.display = "block";
   } else {
-    styleGroupSelect.options.add(new Option(sel, sel, false, true));
+    styleGroupSelect.options.add(new Option(styleElement, styleElement, false, true));
     styleGroup.style.display = "none";
   }
 
-  if (sel === "coastline" && styleGroupSelect.value === "sea_island") {
+  if (styleElement === "coastline" && styleGroupSelect.value === "sea_island") {
     styleCoastline.style.display = "block";
     const auto = (styleCoastlineAuto.checked = coastline.select("#sea_island").attr("auto-filter"));
     if (auto) styleFilter.style.display = "none";
   }
+
+  if (styleElement === "scaleBar") {
+    styleScaleBar.style.display = "block";
+
+    styleScaleBarSize.value = el.attr("data-bar-size");
+    styleScaleBarFontSize.value = el.attr("font-size");
+    styleScaleBarPositionX.value = el.attr("data-x") || "99";
+    styleScaleBarPositionY.value = el.attr("data-y") || "99";
+    styleScaleBarLabel.value = el.attr("data-label") || "";
+
+    const scaleBarBack = el.select("#scaleBarBack");
+    if (scaleBarBack.size()) {
+      styleScaleBarBackgroundOpacity.value = scaleBarBack.attr("opacity");
+      styleScaleBarBackgroundFill.value = styleScaleBarBackgroundFillOutput.value = scaleBarBack.attr("fill");
+      styleScaleBarBackgroundStroke.value = styleScaleBarBackgroundStrokeOutput.value = scaleBarBack.attr("stroke");
+      styleScaleBarBackgroundStrokeWidth.value = scaleBarBack.attr("stroke-width");
+      styleScaleBarBackgroundFilter.value = scaleBarBack.attr("filter");
+      styleScaleBarBackgroundPaddingTop.value = scaleBarBack.attr("data-top");
+      styleScaleBarBackgroundPaddingRight.value = scaleBarBack.attr("data-right");
+      styleScaleBarBackgroundPaddingBottom.value = scaleBarBack.attr("data-bottom");
+      styleScaleBarBackgroundPaddingLeft.value = scaleBarBack.attr("data-left");
+    }
+  }
+
+  if (styleElement === "vignette") {
+    styleVignette.style.display = "block";
+
+    const maskRect = byId("vignette-rect");
+    if (maskRect) {
+      const digit = str => str.replace(/[^\d.]/g, "");
+      styleVignetteX.value = digit(maskRect.getAttribute("x"));
+      styleVignetteY.value = digit(maskRect.getAttribute("y"));
+      styleVignetteWidth.value = digit(maskRect.getAttribute("width"));
+      styleVignetteHeight.value = digit(maskRect.getAttribute("height"));
+      styleVignetteRx.value = digit(maskRect.getAttribute("rx"));
+      styleVignetteRy.value = digit(maskRect.getAttribute("ry"));
+      styleVignetteBlur.value = digit(maskRect.getAttribute("filter"));
+    }
+  }
 }
 
 // Handle style inputs change
-styleGroupSelect.addEventListener("change", selectStyleElement);
+styleGroupSelect.on("change", selectStyleElement);
 
 function getEl() {
   const el = styleElementSelect.value;
   const g = styleGroupSelect.value;
-  if (g === el) return svg.select("#" + el);
+  if (g === el || g === "") return svg.select("#" + el);
   else return svg.select("#" + el).select("#" + g);
 }
 
-styleFillInput.addEventListener("input", function () {
+styleFillInput.on("input", function () {
   styleFillOutput.value = this.value;
   getEl().attr("fill", this.value);
 });
 
-styleStrokeInput.addEventListener("input", function () {
+styleStrokeInput.on("input", function () {
   styleStrokeOutput.value = this.value;
   getEl().attr("stroke", this.value);
   if (styleElementSelect.value === "gridOverlay" && layerIsOn("toggleGrid")) drawGrid();
 });
 
-styleStrokeWidthInput.addEventListener("input", function () {
-  styleStrokeWidthOutput.value = this.value;
-  getEl().attr("stroke-width", +this.value);
+styleStrokeWidthInput.on("input", e => {
+  getEl().attr("stroke-width", e.target.value);
   if (styleElementSelect.value === "gridOverlay" && layerIsOn("toggleGrid")) drawGrid();
 });
 
-styleStrokeDasharrayInput.addEventListener("input", function () {
+styleLetterSpacingInput.on("input", e => {
+  getEl().attr("letter-spacing", e.target.value);
+});
+
+styleStrokeDasharrayInput.on("input", function () {
   getEl().attr("stroke-dasharray", this.value);
   if (styleElementSelect.value === "gridOverlay" && layerIsOn("toggleGrid")) drawGrid();
 });
 
-styleStrokeLinecapInput.addEventListener("change", function () {
+styleStrokeLinecapInput.on("change", function () {
   getEl().attr("stroke-linecap", this.value);
   if (styleElementSelect.value === "gridOverlay" && layerIsOn("toggleGrid")) drawGrid();
 });
 
-styleOpacityInput.addEventListener("input", function () {
-  styleOpacityOutput.value = this.value;
-  getEl().attr("opacity", this.value);
+styleOpacityInput.on("input", e => {
+  getEl().attr("opacity", e.target.value);
 });
 
-styleFilterInput.addEventListener("change", function () {
+styleFilterInput.on("change", function () {
   if (styleGroupSelect.value === "ocean") return oceanLayers.attr("filter", this.value);
   getEl().attr("filter", this.value);
 });
 
-styleTextureInput.addEventListener("change", function () {
-  if (this.value === "none") texture.select("image").attr("xlink:href", "");
-  if (this.value === "default") texture.select("image").attr("xlink:href", getDefaultTexture());
-  else getBase64(this.value, base64 => texture.select("image").attr("xlink:href", base64));
+styleTextureInput.on("change", function () {
+  changeTexture(this.value);
 });
 
-styleTextureShiftX.addEventListener("input", function () {
+function changeTexture(href) {
+  texture.attr("data-href", href);
+  texture.select("image").attr("href", href);
+}
+
+function updateTextureSelectValue(href) {
+  const isAdded = Array.from(styleTextureInput.options).some(option => option.value === href);
+  if (isAdded) {
+    styleTextureInput.value = href;
+  } else {
+    const name = href.split("/").pop().slice(0, 20);
+    styleTextureInput.add(new Option(name, href, false, true));
+  }
+}
+
+styleTextureShiftX.on("input", function () {
+  texture.attr("data-x", this.value);
   texture
     .select("image")
     .attr("x", this.value)
     .attr("width", graphWidth - this.valueAsNumber);
 });
 
-styleTextureShiftY.addEventListener("input", function () {
+styleTextureShiftY.on("input", function () {
+  texture.attr("data-y", this.value);
   texture
     .select("image")
     .attr("y", this.value)
     .attr("height", graphHeight - this.valueAsNumber);
 });
 
-styleClippingInput.addEventListener("change", function () {
+styleClippingInput.on("change", function () {
   getEl().attr("mask", this.value);
 });
 
-styleGridType.addEventListener("change", function () {
+styleGridType.on("change", function () {
   getEl().attr("type", this.value);
   if (layerIsOn("toggleGrid")) drawGrid();
   calculateFriendlyGridSize();
 });
 
-styleGridScale.addEventListener("input", function () {
+styleGridScale.on("input", function () {
   getEl().attr("scale", this.value);
   if (layerIsOn("toggleGrid")) drawGrid();
   calculateFriendlyGridSize();
@@ -372,212 +523,332 @@ styleGridScale.addEventListener("input", function () {
 
 function calculateFriendlyGridSize() {
   const size = styleGridScale.value * 25;
-  const friendly = `${rn(size * distanceScaleInput.value, 2)} ${distanceUnitInput.value}`;
+  const friendly = `${rn(size * distanceScale, 2)} ${distanceUnitInput.value}`;
   styleGridSizeFriendly.value = friendly;
 }
 
-styleGridShiftX.addEventListener("input", function () {
+styleGridShiftX.on("input", function () {
   getEl().attr("dx", this.value);
   if (layerIsOn("toggleGrid")) drawGrid();
 });
 
-styleGridShiftY.addEventListener("input", function () {
+styleGridShiftY.on("input", function () {
   getEl().attr("dy", this.value);
   if (layerIsOn("toggleGrid")) drawGrid();
 });
 
-styleShiftX.addEventListener("input", shiftElement);
-styleShiftY.addEventListener("input", shiftElement);
-
-function shiftElement() {
-  const x = styleShiftX.value || 0;
-  const y = styleShiftY.value || 0;
-  getEl().attr("transform", `translate(${x},${y})`);
-}
-
-styleRescaleMarkers.addEventListener("change", function () {
+styleRescaleMarkers.on("change", function () {
   markers.attr("rescale", +this.checked);
   invokeActiveZooming();
 });
 
-styleCoastlineAuto.addEventListener("change", function () {
+styleCoastlineAuto.on("change", function () {
   coastline.select("#sea_island").attr("auto-filter", +this.checked);
   styleFilter.style.display = this.checked ? "none" : "block";
   invokeActiveZooming();
 });
 
-styleOceanFill.addEventListener("input", function () {
+styleOceanFill.on("input", function () {
   oceanLayers.select("rect").attr("fill", this.value);
   styleOceanFillOutput.value = this.value;
 });
 
-styleOceanPattern.addEventListener("change", function () {
-  document.getElementById("oceanicPattern")?.setAttribute("href", this.value);
+styleOceanPattern.on("change", function () {
+  byId("oceanicPattern")?.setAttribute("href", this.value);
 });
 
-styleOceanPatternOpacity.addEventListener("input", function () {
-  document.getElementById("oceanicPattern").setAttribute("opacity", this.value);
-  styleOceanPatternOpacityOutput.value = this.value;
+styleOceanPatternOpacity.on("input", e => {
+  byId("oceanicPattern").setAttribute("opacity", e.target.value);
 });
 
-outlineLayers.addEventListener("change", function () {
+outlineLayers.on("change", function () {
   oceanLayers.selectAll("path").remove();
   oceanLayers.attr("layers", this.value);
   OceanLayers();
 });
 
-styleHeightmapScheme.addEventListener("change", function () {
-  terrs.attr("scheme", this.value);
+styleHeightmapScheme.on("change", function () {
+  getEl().attr("scheme", this.value);
   drawHeightmap();
 });
 
-styleHeightmapTerracingInput.addEventListener("input", function () {
-  terrs.attr("terracing", this.value);
+openCreateHeightmapSchemeButton.on("click", function () {
+  // start with current scheme
+  const scheme = getEl().attr("scheme");
+  this.dataset.stops = scheme.startsWith("#")
+    ? scheme
+    : (() => [0, 0.25, 0.5, 0.75, 1].map(heightmapColorSchemes[scheme]).map(toHEX).join(","))();
+
+  // render dialog base structure
+  alertMessage.innerHTML = /* html */ `<div>
+    <i>Define heightmap gradient colors from high to low altitude</i>
+    <img id="heightmapSchemePreview" alt="heightmap preview" style="margin-top: 0.5em; width: 100%;" />
+    <div id="heightmapSchemeStops" style="margin-block: 0.5em; display: flex; flex-wrap: wrap;"></div>
+    <div id="heightmapSchemeGradient" style="height: 1.9em; border: 1px solid #767676;"></div>
+  </div>`;
+
+  renderPreview();
+  renderStops();
+  renderGradient();
+
+  function renderPreview() {
+    const stops = openCreateHeightmapSchemeButton.dataset.stops.split(",");
+    const scheme = d3.scaleSequential(d3.interpolateRgbBasis(stops));
+
+    const preview = drawHeights({
+      heights: grid.cells.h,
+      width: grid.cellsX,
+      height: grid.cellsY,
+      scheme,
+      renderOcean: false
+    });
+
+    byId("heightmapSchemePreview").src = preview;
+  }
+
+  function renderStops() {
+    const stops = openCreateHeightmapSchemeButton.dataset.stops.split(",");
+
+    const colorInput = color =>
+      `<input type="color" class="stop" value="${color}" data-tip="Click to set the color" style="width: 2.5em; border: none;" />`;
+    const removeStopButton = index =>
+      `<button class="remove" data-index="${index}" data-tip="Remove color stop" style="margin-top: 0.3em; height: max-content;">x</button>`;
+    const addStopButton = () =>
+      `<button class="add" data-tip="Add color stop in between" style="margin-top: 0.3em; height: max-content;">+</button>`;
+
+    const container = byId("heightmapSchemeStops");
+    container.innerHTML = stops
+      .map(
+        (stop, index) => `${colorInput(stop)}
+        ${index && index < stops.length - 1 ? removeStopButton(index) : ""}`
+      )
+      .join(addStopButton());
+
+    Array.from(container.querySelectorAll("input.stop")).forEach(
+      (input, index) =>
+        (input.oninput = function () {
+          stops[index] = this.value;
+          openCreateHeightmapSchemeButton.dataset.stops = stops.join(",");
+          renderPreview();
+          renderGradient();
+        })
+    );
+
+    Array.from(container.querySelectorAll("button.remove")).forEach(
+      button =>
+        (button.onclick = function () {
+          const index = +this.dataset.index;
+          stops.splice(index, 1);
+          openCreateHeightmapSchemeButton.dataset.stops = stops.join(",");
+          renderPreview();
+          renderStops();
+          renderGradient();
+        })
+    );
+
+    Array.from(container.querySelectorAll("button.add")).forEach(
+      (button, index) =>
+        (button.onclick = function () {
+          const middleColor = d3.interpolateRgb(stops[index], stops[index + 1])(0.5);
+          stops.splice(index + 1, 0, toHEX(middleColor));
+          openCreateHeightmapSchemeButton.dataset.stops = stops.join(",");
+          renderPreview();
+          renderStops();
+          renderGradient();
+        })
+    );
+  }
+
+  function renderGradient() {
+    const stops = openCreateHeightmapSchemeButton.dataset.stops;
+    byId("heightmapSchemeGradient").style.background = `linear-gradient(to right, ${stops})`;
+  }
+
+  function handleCreate() {
+    const stops = openCreateHeightmapSchemeButton.dataset.stops;
+    if (stops in heightmapColorSchemes) return tip("This scheme already exists", false, "error");
+
+    addCustomColorScheme(stops);
+    getEl().attr("scheme", stops);
+    drawHeightmap();
+
+    handleClose();
+  }
+
+  function handleClose() {
+    $("#alert").dialog("close");
+  }
+
+  $("#alert").dialog({
+    resizable: false,
+    title: "Create heightmap color scheme",
+    width: "28em",
+    buttons: {
+      Create: handleCreate,
+      Cancel: handleClose
+    },
+    position: {my: "center top+150", at: "center top", of: "svg"}
+  });
+});
+
+styleHeightmapRenderOcean.on("change", e => {
+  const checked = +e.target.checked;
+  getEl().attr("data-render", checked);
   drawHeightmap();
 });
 
-styleHeightmapSkipInput.addEventListener("input", function () {
-  terrs.attr("skip", this.value);
+styleHeightmapTerracing.on("input", e => {
+  getEl().attr("terracing", e.target.value);
   drawHeightmap();
 });
 
-styleHeightmapSimplificationInput.addEventListener("input", function () {
-  terrs.attr("relax", this.value);
+styleHeightmapSkip.on("input", e => {
+  getEl().attr("skip", e.target.value);
   drawHeightmap();
 });
 
-styleHeightmapCurve.addEventListener("change", function () {
-  terrs.attr("curve", this.value);
+styleHeightmapSimplification.on("input", e => {
+  getEl().attr("relax", e.target.value);
   drawHeightmap();
 });
 
-styleReliefSet.addEventListener("change", function () {
-  terrain.attr("set", this.value);
-  ReliefIcons();
+styleHeightmapCurve.on("change", e => {
+  getEl().attr("curve", e.target.value);
+  drawHeightmap();
+});
+
+styleReliefSet.on("change", e => {
+  terrain.attr("set", e.target.value);
+  drawReliefIcons();
   if (!layerIsOn("toggleRelief")) toggleRelief();
 });
 
-styleReliefSizeInput.addEventListener("change", function () {
-  terrain.attr("size", this.value);
-  styleReliefSizeOutput.value = this.value;
-  ReliefIcons();
+styleReliefSize.on("change", e => {
+  terrain.attr("size", e.target.value);
+  drawReliefIcons();
   if (!layerIsOn("toggleRelief")) toggleRelief();
 });
 
-styleReliefDensityInput.addEventListener("change", function () {
-  terrain.attr("density", this.value);
-  styleReliefDensityOutput.value = this.value;
-  ReliefIcons();
+styleReliefDensity.on("change", e => {
+  terrain.attr("density", e.target.value);
+  drawReliefIcons();
   if (!layerIsOn("toggleRelief")) toggleRelief();
 });
 
-styleTemperatureFillOpacityInput.addEventListener("input", function () {
-  temperature.attr("fill-opacity", this.value);
-  styleTemperatureFillOpacityOutput.value = this.value;
+styleTemperatureFillOpacityInput.on("input", e => {
+  temperature.attr("fill-opacity", e.target.value);
 });
 
-styleTemperatureFontSizeInput.addEventListener("input", function () {
-  temperature.attr("font-size", this.value + "px");
-  styleTemperatureFontSizeOutput.value = this.value + "px";
+styleTemperatureFontSizeInput.on("input", e => {
+  temperature.attr("font-size", e.target.value + "px");
 });
 
-styleTemperatureFillInput.addEventListener("input", function () {
-  temperature.attr("fill", this.value);
-  styleTemperatureFillOutput.value = this.value;
+styleTemperatureFillInput.on("input", e => {
+  temperature.attr("fill", e.target.value);
+  styleTemperatureFillOutput.value = e.target.value;
 });
 
-stylePopulationRuralStrokeInput.addEventListener("input", function () {
-  population.select("#rural").attr("stroke", this.value);
-  stylePopulationRuralStrokeOutput.value = this.value;
+stylePopulationRuralStrokeInput.on("input", e => {
+  population.select("#rural").attr("stroke", e.target.value);
+  stylePopulationRuralStrokeOutput.value = e.target.value;
 });
 
-stylePopulationUrbanStrokeInput.addEventListener("input", function () {
-  population.select("#urban").attr("stroke", this.value);
-  stylePopulationUrbanStrokeOutput.value = this.value;
+stylePopulationUrbanStrokeInput.on("input", e => {
+  population.select("#urban").attr("stroke", e.target.value);
+  stylePopulationUrbanStrokeOutput.value = e.target.value;
 });
 
-styleCompassSizeInput.addEventListener("input", function () {
-  styleCompassSizeOutput.value = this.value;
-  shiftCompass();
-});
-
-styleCompassShiftX.addEventListener("input", shiftCompass);
-styleCompassShiftY.addEventListener("input", shiftCompass);
+styleCompassSizeInput.on("input", shiftCompass);
+styleCompassShiftX.on("input", shiftCompass);
+styleCompassShiftY.on("input", shiftCompass);
 
 function shiftCompass() {
   const tr = `translate(${styleCompassShiftX.value} ${styleCompassShiftY.value}) scale(${styleCompassSizeInput.value})`;
   compass.select("use").attr("transform", tr);
 }
 
-styleLegendColItems.addEventListener("input", function () {
-  styleLegendColItemsOutput.value = this.value;
-  legend.select("#legendBox").attr("data-columns", this.value);
+styleLegendColItems.on("input", e => {
+  legend.select("#legendBox").attr("data-columns", e.target.value);
   redrawLegend();
 });
 
-styleLegendBack.addEventListener("input", function () {
-  styleLegendBackOutput.value = this.value;
-  legend.select("#legendBox").attr("fill", this.value);
+styleLegendBack.on("input", e => {
+  styleLegendBackOutput.value = e.target.value;
+  legend.select("#legendBox").attr("fill", e.target.value);
 });
 
-styleLegendOpacity.addEventListener("input", function () {
-  styleLegendOpacityOutput.value = this.value;
-  legend.select("#legendBox").attr("fill-opacity", this.value);
+styleLegendOpacity.on("input", e => {
+  legend.select("#legendBox").attr("fill-opacity", e.target.value);
 });
 
-styleSelectFont.addEventListener("change", changeFont);
+styleSelectFont.on("change", changeFont);
 function changeFont() {
-  const value = styleSelectFont.value;
-  const font = fonts[value].split(":")[0].replace(/\+/g, " ");
-  getEl().attr("font-family", font).attr("data-font", fonts[value]);
+  const family = styleSelectFont.value;
+  getEl().attr("font-family", family);
+
   if (styleElementSelect.value === "legend") redrawLegend();
 }
 
-styleShadowInput.addEventListener("input", function () {
+styleShadowInput.on("input", function () {
   getEl().style("text-shadow", this.value);
 });
 
-styleFontAdd.addEventListener("click", function () {
-  if (styleInputFont.style.display === "none") {
-    styleInputFont.style.display = "inline-block";
-    styleInputFont.focus();
-    styleSelectFont.style.display = "none";
-  } else {
-    styleInputFont.style.display = "none";
-    styleSelectFont.style.display = "inline-block";
-  }
-});
+styleFontAdd.on("click", function () {
+  addFontNameInput.value = "";
+  addFontURLInput.value = "";
 
-styleInputFont.addEventListener("change", function () {
-  if (!this.value) {
-    tip("Please provide a valid Google font name or link to a @font-face declaration");
-    return;
-  }
-  fetchFonts(this.value).then(fetched => {
-    if (!fetched) return;
-    styleFontAdd.click();
-    styleInputFont.value = "";
-    if (fetched !== 1) return;
-    styleSelectFont.value = fonts.length - 1;
-    changeFont(); // auto-change font if 1 font is fetched
+  $("#addFontDialog").dialog({
+    title: "Add custom font",
+    width: "26em",
+    position: {my: "center", at: "center", of: "svg"},
+    buttons: {
+      Add: function () {
+        const family = addFontNameInput.value;
+        const src = addFontURLInput.value;
+        const method = addFontMethod.value;
+
+        if (!family) return tip("Please provide a font name", false, "error");
+
+        const existingFont =
+          method === "fontURL"
+            ? fonts.find(font => font.family === family && font.src === src)
+            : fonts.find(font => font.family === family);
+        if (existingFont) return tip("The font is already added", false, "error");
+
+        if (method === "fontURL") addWebFont(family, src);
+        else if (method === "googleFont") addGoogleFont(family);
+        else if (method === "localFont") addLocalFont(family);
+
+        addFontNameInput.value = "";
+        addFontURLInput.value = "";
+        $(this).dialog("close");
+      },
+      Cancel: function () {
+        $(this).dialog("close");
+      }
+    }
   });
 });
 
-styleFontSize.addEventListener("change", function () {
-  changeFontSize(+this.value);
+addFontMethod.on("change", function () {
+  addFontURLInput.style.display = this.value === "fontURL" ? "inline" : "none";
 });
 
-styleFontPlus.addEventListener("click", function () {
-  const size = +getEl().attr("data-size") + 1;
-  changeFontSize(Math.min(size, 999));
+styleFontSize.on("change", function () {
+  changeFontSize(getEl(), +this.value);
 });
 
-styleFontMinus.addEventListener("click", function () {
-  const size = +getEl().attr("data-size") - 1;
-  changeFontSize(Math.max(size, 1));
+styleFontPlus.on("click", function () {
+  const current = +styleFontSize.value || 12;
+  changeFontSize(getEl(), Math.min(current + 1, 999));
 });
 
-function changeFontSize(size) {
+styleFontMinus.on("click", function () {
+  const current = +styleFontSize.value || 12;
+  changeFontSize(getEl(), Math.max(current - 1, 1));
+});
+
+function changeFontSize(el, size) {
   styleFontSize.value = size;
 
   const getSizeOnScale = element => {
@@ -590,21 +861,21 @@ function changeFontSize(size) {
   };
 
   const scaleSize = getSizeOnScale(styleElementSelect.value);
-  getEl().attr("data-size", size).attr("font-size", scaleSize);
+  el.attr("data-size", size).attr("font-size", scaleSize);
 
   if (styleElementSelect.value === "legend") redrawLegend();
 }
 
-styleRadiusInput.addEventListener("change", function () {
+styleRadiusInput.on("change", function () {
   changeRadius(+this.value);
 });
 
-styleRadiusPlus.addEventListener("click", function () {
+styleRadiusPlus.on("click", function () {
   const size = Math.max(rn(getEl().attr("size") * 1.1, 2), 0.2);
   changeRadius(size);
 });
 
-styleRadiusMinus.addEventListener("click", function () {
+styleRadiusMinus.on("click", function () {
   const size = Math.max(rn(getEl().attr("size") * 0.9, 2), 0.2);
   changeRadius(size);
 });
@@ -626,22 +897,26 @@ function changeRadius(size, group) {
   changeIconSize(size * 2, g); // change also anchor icons
 }
 
-styleIconSizeInput.addEventListener("change", function () {
+styleIconSizeInput.on("change", function () {
   changeIconSize(+this.value);
 });
 
-styleIconSizePlus.addEventListener("click", function () {
+styleIconSizePlus.on("click", function () {
   const size = Math.max(rn(getEl().attr("size") * 1.1, 2), 0.2);
   changeIconSize(size);
 });
 
-styleIconSizeMinus.addEventListener("click", function () {
+styleIconSizeMinus.on("click", function () {
   const size = Math.max(rn(getEl().attr("size") * 0.9, 2), 0.2);
   changeIconSize(size);
 });
 
 function changeIconSize(size, group) {
   const el = group ? anchors.select("#" + group) : getEl();
+  if (!el.size()) {
+    console.warn(`Group ${group} not found. Can not set icon size!`);
+    return;
+  }
   const oldSize = +el.attr("size");
   const shift = (size - oldSize) / 2;
   el.attr("size", size);
@@ -656,73 +931,74 @@ function changeIconSize(size, group) {
   styleIconSizeInput.value = size;
 }
 
-styleStatesBodyOpacity.addEventListener("input", function () {
-  styleStatesBodyOpacityOutput.value = this.value;
-  statesBody.attr("opacity", this.value);
+styleStatesBodyOpacity.on("input", e => {
+  statesBody.attr("opacity", e.target.value);
 });
 
-styleStatesBodyFilter.addEventListener("change", function () {
+styleStatesBodyFilter.on("change", function () {
   statesBody.attr("filter", this.value);
 });
 
-styleStatesHaloWidth.addEventListener("input", function () {
-  styleStatesHaloWidthOutput.value = this.value;
-  statesHalo.attr("data-width", this.value).attr("stroke-width", this.value);
+styleStatesHaloWidth.on("input", e => {
+  const value = e.target.value;
+  statesHalo.attr("data-width", value).attr("stroke-width", value);
 });
 
-styleStatesHaloOpacity.addEventListener("input", function () {
-  styleStatesHaloOpacityOutput.value = this.value;
-  statesHalo.attr("opacity", this.value);
+styleStatesHaloOpacity.on("input", e => {
+  statesHalo.attr("opacity", e.target.value);
 });
 
-styleStatesHaloBlur.addEventListener("input", function () {
-  styleStatesHaloBlurOutput.value = this.value;
-  const blur = +this.value > 0 ? `blur(${this.value}px)` : null;
+styleStatesHaloBlur.on("input", e => {
+  const value = Number(e.target.value);
+  const blur = value > 0 ? `blur(${value}px)` : null;
   statesHalo.attr("filter", blur);
 });
 
-styleArmiesFillOpacity.addEventListener("input", function () {
-  armies.attr("fill-opacity", this.value);
-  styleArmiesFillOpacityOutput.value = this.value;
+styleArmiesFillOpacity.on("input", e => {
+  armies.attr("fill-opacity", e.target.value);
 });
 
-styleArmiesSize.addEventListener("input", function () {
-  armies.attr("box-size", this.value).attr("font-size", this.value * 2);
-  styleArmiesSizeOutput.value = this.value;
+styleArmiesSize.on("input", e => {
+  const value = Number(e.target.value);
+  armies.attr("box-size", value).attr("font-size", value * 2);
+
   armies.selectAll("g").remove(); // clear armies layer
   pack.states.forEach(s => {
     if (!s.i || s.removed || !s.military.length) return;
-    Military.drawRegiments(s.military, s.i);
+    drawRegiments(s.military, s.i);
   });
 });
 
-emblemsStateSizeInput.addEventListener("change", drawEmblems);
-emblemsProvinceSizeInput.addEventListener("change", drawEmblems);
-emblemsBurgSizeInput.addEventListener("change", drawEmblems);
+emblemsStateSizeInput.on("change", e => {
+  emblems.select("#stateEmblems").attr("data-size", e.target.value);
+  drawEmblems();
+});
+
+emblemsProvinceSizeInput.on("change", e => {
+  emblems.select("#provinceEmblems").attr("data-size", e.target.value);
+  drawEmblems();
+});
+
+emblemsBurgSizeInput.on("change", e => {
+  emblems.select("#burgEmblems").attr("data-size", e.target.value);
+  drawEmblems();
+});
 
 // request a URL to image to be used as a texture
 function textureProvideURL() {
-  alertMessage.innerHTML = `Provide an image URL to be used as a texture:
-    <input id="textureURL" type="url" style="width: 100%" placeholder="http://www.example.com/image.jpg" oninput="fetchTextureURL(this.value)">
+  alertMessage.innerHTML = /* html */ `Provide a texture image URL:
+    <input id="textureURL" type="url" style="width: 100%" placeholder="http://www.example.com/image.jpg" oninput="fetchTextureURL(this.value)" />
     <canvas id="texturePreview" width="256px" height="144px"></canvas>`;
+
   $("#alert").dialog({
     resizable: false,
     title: "Load custom texture",
-    width: "26em",
+    width: "28em",
     buttons: {
       Apply: function () {
-        const name = textureURL.value.split("/").pop();
-        if (!name || name === "") {
-          tip("Please provide a valid URL", false, "error");
-          return;
-        }
-        const opt = document.createElement("option");
-        opt.value = textureURL.value;
-        opt.text = name.slice(0, 20);
-        styleTextureInput.add(opt);
-        styleTextureInput.value = textureURL.value;
-        getBase64(textureURL.value, base64 => texture.select("image").attr("xlink:href", base64));
-        zoom.scaleBy(svg, 1.00001); // enforce browser re-draw
+        if (!textureURL.value) return tip("Please provide a valid URL", false, "error");
+        changeTexture(textureURL.value);
+        updateTextureSelectValue(textureURL.value);
         $(this).dialog("close");
       },
       Cancel: function () {
@@ -733,10 +1009,10 @@ function textureProvideURL() {
 }
 
 function fetchTextureURL(url) {
-  INFO && console.log("Provided URL is", url);
+  INFO && console.info("Provided URL is", url);
   const img = new Image();
   img.onload = function () {
-    const canvas = document.getElementById("texturePreview");
+    const canvas = byId("texturePreview");
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -744,180 +1020,121 @@ function fetchTextureURL(url) {
   img.src = url;
 }
 
-const defaultStyles = {
-  styleAncient: `{"#map":{"background-color":"#000000","filter":null,"data-filter":null},"#armies":{"font-size":8,"box-size":4,"stroke":"#000","stroke-width":0.2,"fill-opacity":1,"filter":null},"#biomes":{"opacity":null,"filter":null,"mask":"url(#land)"},"#stateBorders":{"opacity":0.8,"stroke":"#56566d","stroke-width":1,"stroke-dasharray":2,"stroke-linecap":"butt","filter":null},"#provinceBorders":{"opacity":0.8,"stroke":"#56566d","stroke-width":0.2,"stroke-dasharray":1,"stroke-linecap":"butt","filter":null},"#cells":{"opacity":null,"stroke":"#808080","stroke-width":0.1,"filter":null,"mask":null},"#gridOverlay":{"opacity":0.8,"scale":1,"dx":0,"dy":0,"type":"pointyHex","stroke":"#808080","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"transform":null,"filter":null,"mask":null},"#coordinates":{"opacity":1,"data-size":12,"font-size":12,"stroke":"#d4d4d4","stroke-width":1,"stroke-dasharray":5,"stroke-linecap":null,"filter":null,"mask":null},"#compass":{"opacity":0.5,"transform":null,"filter":"url(#filter-sepia)","mask":"url(#water)","shape-rendering":"optimizespeed"},"#rose":{"transform":"translate(80 80) scale(.25)"},"#relig":{"opacity":0.7,"stroke":"#404040","stroke-width":0.7,"filter":null},"#cults":{"opacity":0.6,"stroke":"#777777","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#landmass":{"opacity":1,"fill":"#e3dfce","filter":null},"#markers":{"opacity":null,"rescale":1,"filter":""},"#prec":{"opacity":null,"stroke":"#000000","stroke-width":0.1,"fill":"#003dff","filter":null},"#population":{"opacity":null,"stroke-width":1.6,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null},"#rural":{"stroke":"#0000ff"},"#urban":{"stroke":"#ff0000"},"#freshwater":{"opacity":0.6,"fill":"#c8d6e0","stroke":"#968d6e","stroke-width":0.7,"filter":null},"#salt":{"opacity":0.5,"fill":"#339482","stroke":"#836a34","stroke-width":0.7,"filter":null},"#sinkhole":{"opacity":1,"fill":"#c3d6df","stroke":"#b29062","stroke-width":0.7,"filter":null},"#frozen":{"opacity":0.95,"fill":"#cdd4e7","stroke":"#cfe0eb","stroke-width":0,"filter":null},"#lava":{"opacity":0.7,"fill":"#a04e18","stroke":"#835520","stroke-width":2,"filter":"url(#paper)"},"#dry":{"opacity":0.7,"fill":"#c6b795","stroke":"#8e816f","stroke-width":0.7,"filter":null},"#sea_island":{"opacity":0.5,"stroke":"#1f3846","stroke-width":0.7,"filter":"url(#dropShadow)","auto-filter":1},"#lake_island":{"opacity":1,"stroke":"#7c8eaf","stroke-width":0.35,"filter":null},"#terrain":{"opacity":1,"set":"simple","size":1,"density":0.4,"filter":null,"mask":null},"#rivers":{"opacity":null,"filter":"","fill":"#a69b7d"},"#ruler":{"opacity":null,"filter":null},"#roads":{"opacity":0.7,"stroke":"#8d502a","stroke-width":1,"stroke-dasharray":3,"stroke-linecap":"inherit","filter":"","mask":null},"#trails":{"opacity":0.7,"stroke":"#924217","stroke-width":0.5,"stroke-dasharray":"1 2","stroke-linecap":"butt","filter":null,"mask":null},"#searoutes":{"opacity":0.8,"stroke":"#b16925","stroke-width":0.8,"stroke-dasharray":"1 2","stroke-linecap":"round","filter":null,"mask":null},"#statesBody":{"opacity":0.2,"filter":"url(#filter-sepia)"},"#statesHalo":{"opacity":0.4,"data-width":10,"stroke-width":10,"filter":"blur(6px)"},"#provs":{"opacity":0.7,"fill":"#000000","font-size":10,"data-font":"Georgia","font-family":"Georgia","filter":null},"#temperature":{"opacity":null,"font-size":"8px","fill":"#000000","fill-opacity":0.3,"stroke":null,"stroke-width":1.8,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#ice":{"opacity":0.35,"fill":"#e8f0f6","stroke":"#e8f0f6","stroke-width":3,"filter":"url(#dropShadow05)"},"#emblems":{"opacity":0.8,"stroke-width":0.8,"filter":"url(#dropShadow05)"},"#texture":{"opacity":0.6,"filter":"","mask":""},"#textureImage":{"x":0,"y":0},"#zones":{"opacity":0.6,"stroke":"#333333","stroke-width":0,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null,"mask":null},"#oceanLayers":{"filter":"","layers":"-6,-4,-2"},"#oceanBase":{"fill":"#c99f64"},"#oceanicPattern":{"href":"./images/kiwiroo.png","opacity":0.4},"#terrs":{"opacity":null,"scheme":"bright","terracing":0,"skip":2,"relax":1,"curve":0,"filter":"url(#blur3)","mask":"url(#land)"},"#legend":{"data-size":13,"font-size":13,"data-font":"Almendra+SC","font-family":"Almendra SC","stroke":"#812929","stroke-width":2.5,"stroke-dasharray":"0 4 10 4","stroke-linecap":"round","data-x":99,"data-y":93,"data-columns":8},"#burgLabels > #cities":{"opacity":1,"fill":"#3e3e4b","text-shadow":"white 0px 0px 4px","data-size":12,"font-size":12,"data-font":"Great+Vibes","font-family":"Great Vibes"},"#burgIcons > #cities":{"opacity":1,"fill":"#fdfab9","fill-opacity":0.7,"size":1,"stroke":"#6f4e1f","stroke-width":0.3,"stroke-dasharray":".3 .4","stroke-linecap":"butt"},"#anchors > #cities":{"opacity":1,"fill":"#ffffff","size":2,"stroke":"#3e3e4b","stroke-width":1.2},"#burgLabels > #towns":{"opacity":1,"fill":"#3e3e4b","text-shadow":"white 0px 0px 4px","data-size":5,"font-size":5,"data-font":"Great+Vibes","font-family":"Great Vibes"},"#burgIcons > #towns":{"opacity":1,"fill":"#fef4d8","fill-opacity":0.7,"size":0.5,"stroke":"#72472c","stroke-width":0.12,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #towns":{"opacity":1,"fill":"#ffffff","size":1,"stroke":"#3e3e4b","stroke-width":1.2},"#labels > #states":{"opacity":1,"fill":"#3e3e4b","stroke":"#3a3a3a","stroke-width":0,"text-shadow":"white 0px 0px 4px","data-size":22,"font-size":22,"data-font":"Great+Vibes","font-family":"Great Vibes","filter":"url(#filter-sepia)"},"#labels > #addedLabels":{"opacity":1,"fill":"#3e3e4b","stroke":"#3a3a3a","stroke-width":0,"text-shadow":"white 0px 0px 4px","data-size":18,"font-size":18,"data-font":"Times+New+Roman","font-family":"Times New Roman","filter":"url(#filter-sepia)"},"#fogging":{"opacity":0.98,"fill":"#30426f","filter":null}}`,
-  styleGloom: `{"#map":{"background-color":"#000000","filter":null,"data-filter":null},"#armies":{"font-size":6,"box-size":3,"stroke":"#000","stroke-width":0.3,"opacity":1,"fill-opacity":1,"filter":null},"#biomes":{"opacity":null,"filter":"url(#blur5)","mask":"url(#land)"},"#stateBorders":{"opacity":1,"stroke":"#56566d","stroke-width":1,"stroke-dasharray":2,"stroke-linecap":"butt","filter":null},"#provinceBorders":{"opacity":1,"stroke":"#56566d","stroke-width":0.3,"stroke-dasharray":".7 1","stroke-linecap":"butt","filter":null},"#cells":{"opacity":null,"stroke":"#808080","stroke-width":0.1,"filter":null,"mask":null},"#gridOverlay":{"opacity":0.8,"scale":1,"dx":0,"dy":"0","type":"pointyHex","stroke":"#808080","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"transform":null,"filter":null,"mask":null},"#coordinates":{"opacity":1,"data-size":14,"font-size":14,"stroke":"#4a4a4a","stroke-width":1,"stroke-dasharray":6,"stroke-linecap":null,"filter":null,"mask":null},"#compass":{"opacity":0.6,"transform":null,"filter":null,"mask":"url(#water)","shape-rendering":"optimizespeed"},"#rose":{"transform":"translate(100 100) scale(0.3)"},"#relig":{"opacity":0.7,"stroke":"#404040","stroke-width":1,"filter":null},"#cults":{"opacity":0.7,"stroke":"#777777","stroke-width":1.5,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#landmass":{"opacity":1,"fill":"#e0e0e0","filter":null},"#markers":{"opacity":0.8,"rescale":1,"filter":"url(#dropShadow05)"},"#prec":{"opacity":null,"stroke":"#000000","stroke-width":0.1,"fill":"#003dff","filter":null},"#population":{"opacity":null,"stroke-width":1.6,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null},"#rural":{"stroke":"#0000aa"},"#urban":{"stroke":"#9d0000"},"#freshwater":{"opacity":0.5,"fill":"#a6c1fd","stroke":"#5f799d","stroke-width":0.7,"filter":null},"#salt":{"opacity":0.5,"fill":"#409b8a","stroke":"#388985","stroke-width":0.7,"filter":null},"#sinkhole":{"opacity":1,"fill":"#5bc9fd","stroke":"#53a3b0","stroke-width":0.7,"filter":null},"#frozen":{"opacity":0.95,"fill":"#cdd4e7","stroke":"#cfe0eb","stroke-width":0,"filter":null},"#lava":{"opacity":0.7,"fill":"#90270d","stroke":"#f93e0c","stroke-width":2,"filter":"url(#crumpled)"},"#dry":{"opacity":0.7,"fill":"#c9bfa7","stroke":"#8e816f","stroke-width":0.7,"filter":null},"#sea_island":{"opacity":0.6,"stroke":"#1f3846","stroke-width":0.7,"filter":"url(#dropShadow)","auto-filter":1},"#lake_island":{"opacity":1,"stroke":"#7c8eaf","stroke-width":0.35,"filter":null},"#terrain":{"opacity":0.9,"set":"simple","size":1,"density":0.4,"filter":null,"mask":null},"#rivers":{"opacity":null,"filter":null,"fill":"#779582"},"#ruler":{"opacity":null,"filter":null},"#roads":{"opacity":1,"stroke":"#8b4418","stroke-width":0.9,"stroke-dasharray":"2 3","stroke-linecap":"round","filter":null,"mask":null},"#trails":{"opacity":1,"stroke":"#844017","stroke-width":0.2,"stroke-dasharray":".5 1","stroke-linecap":"round","filter":null,"mask":null},"#searoutes":{"opacity":0.8,"stroke":"#5e1865","stroke-width":0.6,"stroke-dasharray":"1.2 2.4","stroke-linecap":"round","filter":null,"mask":null},"#statesBody":{"opacity":0.4,"filter":null},"#statesHalo":{"opacity":0.5,"data-width":12,"stroke-width":12,"filter":"blur(10px)"},"#provs":{"opacity":0.7,"fill":"#000000","data-size":10,"font-size":10,"font-family":"Georgia","data-font":"Georgia","filter":null},"#temperature":{"opacity":1,"font-size":"11px","fill":"#62001b","fill-opacity":0.3,"stroke":null,"stroke-width":2,"stroke-dasharray":2,"stroke-linecap":null,"filter":null},"#ice":{"opacity":0.9,"fill":"#e8f0f6","stroke":"#e8f0f6","stroke-width":1,"filter":"url(#dropShadow05)"},"#emblems": {"opacity":0.6,"stroke-width":0.5,"filter":null},"#texture":{"opacity":null,"filter":null,"mask":"url(#land)"},"#textureImage":{"x":0,"y":0},"#zones":{"opacity":0.5,"stroke":"#333333","stroke-width":0,"stroke-dasharray":null,"stroke-linecap":"butt","filter":"url(#dropShadow01)","mask":null},"#oceanLayers":{"filter":null,"layers":"-6,-4,-2"},"#oceanBase":{"fill":"#4e6964"},"#oceanicPattern":{"href":"./images/pattern3.png", "opacity":0.2},"#terrs":{"opacity":1,"scheme":"bright","terracing":0,"skip":0,"relax":1,"curve":1,"filter":"url(#filter-grayscale)","mask":"url(#land)"},"#legend":{"data-size":13,"font-size":13,"data-font":"Almendra+SC","font-family":"Almendra SC","stroke":"#812929","stroke-width":2.5,"stroke-dasharray":"0 4 10 4","stroke-linecap":"round","data-x":99,"data-y":93,"data-columns":8},"#legendBox":{},"#burgLabels > #cities":{"opacity":1,"fill":"#3e3e4b","text-shadow":"white 0 0 4px","data-size":7,"font-size":7,"data-font":"Bitter","font-family":"Bitter"},"#burgIcons > #cities":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":2,"stroke":"#444444","stroke-width":0.25,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #cities":{"opacity":0.8,"fill":"#ffffff","size":4,"stroke":"#3e3e4b","stroke-width":1},"#burgLabels > #towns":{"opacity":1,"fill":"#3e3e4b","data-size":3,"font-size":3,"data-font":"Bitter","font-family":"Bitter"},"#burgIcons > #towns":{"opacity":0.95,"fill":"#ffffff","fill-opacity":0.7,"size":0.8,"stroke":"#3e3e4b","stroke-width":0.2,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #towns":{"opacity":1,"fill":"#ffffff","size":1.6,"stroke":"#3e3e4b","stroke-width":1.2},"#labels > #states":{"opacity":1,"fill":"#4e4e4e","stroke":"#b5b5b5","stroke-width":0,"text-shadow":"white 0 0 4px","data-size":22,"font-size":22,"data-font":"Almendra+SC","font-family":"Almendra SC","filter":null},"#labels > #addedLabels":{"opacity":1,"fill":"#3e3e4b","stroke":"#3a3a3a","stroke-width":0,"text-shadow":"white 0 0 4px","data-size":18,"font-size":18,"data-font":"Almendra+SC","font-family":"Almendra SC","filter":null},"#fogging":{"opacity":0.98,"fill":"#1b1423","filter":null}}`,
-  styleClean: `{"#map":{"background-color":"#000000","filter":null,"data-filter":null},"#armies":{"font-size":6,"box-size":3,"stroke":"#000","stroke-width":0,"opacity":1,"fill-opacity":1,"filter":null},"#biomes":{"opacity":0.5,"filter":"url(#blur7)","mask":"url(#land)"},"#stateBorders":{"opacity":0.8,"stroke":"#414141","stroke-width":0.7,"stroke-dasharray":0,"stroke-linecap":"butt","filter":null},"#provinceBorders":{"opacity":0.8,"stroke":"#414141","stroke-width":0.45,"stroke-dasharray":1,"stroke-linecap":"butt","filter":null},"#cells":{"opacity":null,"stroke":"#808080","stroke-width":0.09,"filter":null,"mask":"url(#land)"},"#gridOverlay":{"opacity":0.8,"scale":1,"dx":0,"dy":"0","type":"pointyHex","stroke":"#808080","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"transform":null,"filter":null,"mask":null},"#coordinates":{"opacity":1,"data-size":12,"font-size":12,"stroke":"#414141","stroke-width":0.45,"stroke-dasharray":3,"stroke-linecap":null,"filter":null,"mask":null},"#compass":{"opacity":0.8,"transform":null,"filter":null,"mask":"url(#water)","shape-rendering":"optimizespeed"},"#rose":{"transform":null},"#relig":{"opacity":0.7,"stroke":"#404040","stroke-width":0.7,"filter":null},"#cults":{"opacity":0.6,"stroke":"#777777","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#landmass":{"opacity":1,"fill":"#eeedeb","filter":null},"#markers":{"opacity":null,"rescale":null,"filter":"url(#dropShadow01)"},"#prec":{"opacity":null,"stroke":"#000000","stroke-width":0,"fill":"#0080ff","filter":null},"#population":{"opacity":null,"stroke-width":2.58,"stroke-dasharray":0,"stroke-linecap":"butt","filter":"url(#blur3)"},"#rural":{"stroke":"#ff0000"},"#urban":{"stroke":"#800000"},"#freshwater":{"opacity":0.5,"fill":"#aadaff","stroke":"#5f799d","stroke-width":0,"filter":null},"#salt":{"opacity":0.5,"fill":"#409b8a","stroke":"#388985","stroke-width":0.7,"filter":null},"#sinkhole":{"opacity":1,"fill":"#5bc9fd","stroke":"#53a3b0","stroke-width":0.7,"filter":null},"#frozen":{"opacity":0.95,"fill":"#cdd4e7","stroke":"#cfe0eb","stroke-width":0,"filter":null},"#lava":{"opacity":0.7,"fill":"#90270d","stroke":"#f93e0c","stroke-width":2,"filter":"url(#crumpled)"},"#dry":{"opacity":0.7,"fill":"#c9bfa7","stroke":"#8e816f","stroke-width":0.7,"filter":null},"#sea_island":{"opacity":0.6,"stroke":"#595959","stroke-width":0.4,"filter":null,"auto-filter":0},"#lake_island":{"opacity":0,"stroke":"#7c8eaf","stroke-width":0,"filter":null},"#terrain":{"opacity":1,"set":"simple","size":1,"density":0.4,"filter":null,"mask":null},"#rivers":{"opacity":null,"filter":null,"fill":"#aadaff"},"#ruler":{"opacity":null,"filter":null},"#roads":{"opacity":0.9,"stroke":"#f6d068","stroke-width":0.7,"stroke-dasharray":0,"stroke-linecap":"inherit","filter":null,"mask":null},"#trails":{"opacity":1,"stroke":"#ffffff","stroke-width":0.25,"stroke-dasharray":"","stroke-linecap":"round","filter":null,"mask":null},"#searoutes":{"opacity":0.8,"stroke":"#4f82c6","stroke-width":0.45,"stroke-dasharray":2,"stroke-linecap":"butt","filter":null,"mask":"url(#water)"},"#statesBody":{"opacity":0.3,"filter":null},"#statesHalo":{"opacity":0.5,"data-width":1,"stroke-width":1,"filter":null},"#provs":{"opacity":0.7,"fill":"#000000","data-size":10,"font-size":10,"font-family":"Georgia","data-font":"Georgia","filter":null},"#temperature":{"opacity":null,"font-size":"8px","fill":"#000000","fill-opacity":0.3,"stroke":null,"stroke-width":1.8,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#ice":{"opacity":0.9,"fill":"#e8f0f6","stroke":"#e8f0f6","stroke-width":1,"filter":"url(#dropShadow01)"},"#emblems":{"opacity":1,"stroke-width":1,"filter":null},"#texture":{"opacity":null,"filter":null,"mask":"url(#land)"},"#textureImage":{},"#zones":{"opacity":0.7,"stroke":"#ff6262","stroke-width":0,"stroke-dasharray":"","stroke-linecap":"butt","filter":null,"mask":null},"#oceanLayers":{"filter":null,"layers":"none"},"#oceanBase":{"fill":"#aadaff"},"#oceanicPattern":{"href":"", "opacity":0.2},"#terrs":{"opacity":0.5,"scheme":"bright","terracing":0,"skip":5,"relax":0,"curve":0,"filter":null,"mask":"url(#land)"},"#legend":{"data-size":12.74,"font-size":12.74,"data-font":"Arial","font-family":"Arial","stroke":"#909090","stroke-width":1.13,"stroke-dasharray":0,"stroke-linecap":"round","data-x":98.39,"data-y":12.67,"data-columns":null},"#legendBox":{},"#burgLabels > #cities":{"opacity":1,"fill":"#414141","text-shadow":"white 0 0 4px","data-size":7,"font-size":7,"data-font":"Arial","font-family":"Arial"},"#burgIcons > #cities":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":1,"stroke":"#3e3e4b","stroke-width":0.24,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #cities":{"opacity":1,"fill":"#ffffff","size":2,"stroke":"#303030","stroke-width":1.7},"#burgLabels > #towns":{"opacity":1,"fill":"#414141","data-size":3,"font-size":3,"data-font":"Arial","font-family":"Arial"},"#burgIcons > #towns":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":0.5,"stroke":"#3e3e4b","stroke-width":0.12,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #towns":{"opacity":1,"fill":"#ffffff","size":1,"stroke":"#3e3e4b","stroke-width":1.06},"#labels > #states":{"opacity":1,"fill":"#292929","stroke":"#303030","stroke-width":0,"text-shadow":"white 0 0 2px","data-size":10,"font-size":10,"data-font":"Arial","font-family":"Arial","filter":null},"#labels > #addedLabels":{"opacity":1,"fill":"#414141","stroke":"#3a3a3a","stroke-width":0,"text-shadow":"white 0 0 4px","data-size":18,"font-size":18,"data-font":"Arial","font-family":"Arial","filter":null},"#fogging":{"opacity":1,"fill":"#ffffff","filter":null}}`,
-  styleLight: `{"#map":{"background-color":"#000000","filter":null,"data-filter":null},"#armies":{"font-size":8,"box-size":4,"stroke":"#000","stroke-width":0.02,"fill-opacity":0.8,"filter":null},"#biomes":{"opacity":0.5,"filter":null,"mask":"url(#land)"},"#stateBorders":{"opacity":0.8,"stroke":"#4c483e","stroke-width":1,"stroke-dasharray":2,"stroke-linecap":"square","filter":null},"#provinceBorders":{"opacity":0.8,"stroke":"#56566d","stroke-width":0.2,"stroke-dasharray":1,"stroke-linecap":"butt","filter":null},"#cells":{"opacity":null,"stroke":"#808080","stroke-width":0.1,"filter":null,"mask":null},"#gridOverlay":{"opacity":0.5,"scale":1,"dx":0,"dy":0,"type":"pointyHex","stroke":"#808080","stroke-width":1,"stroke-dasharray":null,"stroke-linecap":null,"transform":null,"filter":null,"mask":null},"#coordinates":{"opacity":0.7,"data-size":15,"font-size":15,"stroke":"#734d37","stroke-width":1.5,"stroke-dasharray":5,"stroke-linecap":"square","filter":null,"mask":""},"#compass":{"opacity":0.6,"transform":null,"filter":null,"mask":"url(#water)","shape-rendering":"optimizespeed"},"#rose":{"transform":null},"#relig":{"opacity":0.5,"stroke":null,"stroke-width":0,"filter":null},"#cults":{"opacity":0.5,"stroke":"#777777","stroke-width":0,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#landmass":{"opacity":1,"fill":"#f9f2ea","filter":null},"#markers":{"opacity":null,"rescale":1,"filter":null},"#prec":{"opacity":null,"stroke":"#000000","stroke-width":0.1,"fill":"#2554ef","filter":null},"#population":{"opacity":null,"stroke-width":1.6,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null},"#rural":{"stroke":"#0000ff"},"#urban":{"stroke":"#ff0000"},"#freshwater":{"opacity":1,"fill":"#98cdc4","stroke":"#719892","stroke-width":0.46,"filter":"url(#dropShadow05)"},"#salt":{"opacity":0.5,"fill":"#409b8a","stroke":"#388985","stroke-width":0.7,"filter":null},"#sinkhole":{"opacity":1,"fill":"#5bc9fd","stroke":"#53a3b0","stroke-width":0.7,"filter":null},"#frozen":{"opacity":0.95,"fill":"#cdd4e7","stroke":"#cfe0eb","stroke-width":0,"filter":null},"#lava":{"opacity":0.7,"fill":"#90270d","stroke":"#f93e0c","stroke-width":2,"filter":"url(#crumpled)"},"#dry":{"opacity":1,"fill":"#c9bfa7","stroke":"#8e816f","stroke-width":0.7,"filter":null},"#sea_island":{"opacity":1,"stroke":"#5e5e5e","stroke-width":0.4,"filter":"url(#dropShadow)","auto-filter":1},"#lake_island":{"opacity":1,"stroke":"#7c8eaf","stroke-width":0.35,"filter":null},"#terrain":{"opacity":0.6,"set":"colored","size":1,"density":0.3,"filter":null,"mask":""},"#rivers":{"opacity":null,"filter":null,"fill":"#6d94ba"},"#ruler":{"opacity":null,"filter":null},"#roads":{"opacity":0.9,"stroke":"#3c1d0b","stroke-width":1.37,"stroke-dasharray":2,"stroke-linecap":"inherit","filter":null,"mask":null},"#trails":{"opacity":0.9,"stroke":"#95481a","stroke-width":0.88,"stroke-dasharray":".8 1.6","stroke-linecap":"butt","filter":null,"mask":null},"#searoutes":{"opacity":0.8,"stroke":"#ffffff","stroke-width":0.45,"stroke-dasharray":"1 2","stroke-linecap":"round","filter":null,"mask":null},"#statesBody":{"opacity":0.2,"filter":null},"#statesHalo":{"opacity":0.3,"data-width":25,"stroke-width":25,"filter":"blur(5px)"},"#provs":{"opacity":0.4,"fill":"#000000","font-size":5,"data-font":"IM+Fell+English","font-family":"IM Fell English","filter":null},"#temperature":{"opacity":null,"font-size":"8px","fill":"#000000","fill-opacity":0.3,"stroke":null,"stroke-width":1.8,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#ice":{"opacity":0.5,"fill":"#e8f0f6","stroke":"#e8f0f6","stroke-width":1.5,"filter":"url(#dropShadow05)"},"#emblems":{"opacity":0.9,"stroke-width":1,"filter":null},"#texture":{"opacity":0.39,"filter":null,"mask":""},"#zones":{"opacity":0.6,"stroke":"#333333","stroke-width":0,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null,"mask":null},"#oceanLayers":{"filter":"url(#dropShadow05)","layers":"-6,-3,-1"},"#oceanBase":{"fill":"#8dc1c8"},"#oceanicPattern":{"href":"./images/pattern1.png","opacity":0.2},"#terrs":{"opacity":0.4,"scheme":"light","terracing":10,"skip":5,"relax":0,"curve":0,"filter":"url(#turbulence)","mask":"url(#land)"},"#legend":{"data-size":13,"font-size":13,"data-font":"Almendra+SC","font-family":"Almendra SC","stroke":"#812929","stroke-width":2.5,"stroke-dasharray":"0 4 10 4","stroke-linecap":"round","data-x":54.73,"data-y":62.98,"data-columns":8},"#burgLabels > #cities":{"opacity":1,"fill":"#3a3a3a","text-shadow":"white 0px 0px 4px","data-size":8,"font-size":8,"data-font":"IM+Fell+English","font-family":"IM Fell English"},"#burgIcons > #cities":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":3,"stroke":"#3e3e4b","stroke-width":0.4,"stroke-dasharray":"0.5 0.25","stroke-linecap":"butt"},"#anchors > #cities":{"opacity":1,"fill":"#ffffff","size":5.5,"stroke":"#3e3e4b","stroke-width":1.2},"#burgLabels > #towns":{"opacity":1,"fill":"#3e3e4b","text-shadow":"white 0px 0px 4px","data-size":4,"font-size":4,"data-font":"IM+Fell+English","font-family":"IM Fell English"},"#burgIcons > #towns":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":1.2,"stroke":"#3e3e4b","stroke-width":0.2,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #towns":{"opacity":1,"fill":"#ffffff","size":2.2,"stroke":"#3e3e4b","stroke-width":1.2},"#labels > #states":{"opacity":1,"fill":"#3e3e3e","stroke":"#000000","stroke-width":0.3,"text-shadow":"white 0px 0px 6px","data-size":14,"font-size":14,"data-font":"IM+Fell+English","font-family":"IM Fell English","filter":null},"#labels > #addedLabels":{"opacity":1,"fill":"#f24706","stroke":"#701b05","stroke-width":0.1,"text-shadow":"white 0px 0px 4px","data-size":6,"font-size":6,"data-font":"IM+Fell+English","font-family":"IM Fell English","filter":null},"#fogging":{"opacity":1,"fill":"#30426f","filter":null}}`,
-  styleWatercolor: `{"#map":{"background-color":"#000000","filter":null,"data-filter":null},"#armies":{"font-size":8,"box-size":4,"stroke":"#000","stroke-width":0.2,"fill-opacity":1,"filter":null},"#biomes":{"opacity":0.6,"filter":null,"mask":"url(#land)"},"#stateBorders":{"opacity":0.6,"stroke":"#56566d","stroke-width":1,"stroke-dasharray":3,"stroke-linecap":"butt","filter":null},"#provinceBorders":{"opacity":0.5,"stroke":"#56566d","stroke-width":0.5,"stroke-dasharray":"0 2","stroke-linecap":"round","filter":null},"#cells":{"opacity":null,"stroke":"#808080","stroke-width":0.1,"filter":null,"mask":null},"#gridOverlay":{"opacity":0.8,"scale":1,"dx":0,"dy":0,"type":"pointyHex","stroke":"#777777","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"transform":null,"filter":null,"mask":null},"#coordinates":{"opacity":1,"data-size":12,"font-size":12,"stroke":"#d4d4d4","stroke-width":1,"stroke-dasharray":5,"stroke-linecap":null,"filter":null,"mask":null},"#compass":{"opacity":0.8,"transform":null,"filter":null,"mask":"url(#water)","shape-rendering":"optimizespeed"},"#rose":{"transform":"translate(80 80) scale(.25)"},"#relig":{"opacity":0.7,"stroke":"#777777","stroke-width":0,"filter":"url(#bluredSplotch)"},"#cults":{"opacity":0.6,"stroke":"#777777","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"filter":"url(#splotch)"},"#landmass":{"opacity":1,"fill":"#eef6fb","filter":null},"#markers":{"opacity":null,"rescale":1,"filter":"url(#dropShadow01)"},"#prec":{"opacity":null,"stroke":"#000000","stroke-width":0.1,"fill":"#003dff","filter":null},"#population":{"opacity":null,"stroke-width":1.6,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null},"#rural":{"stroke":"#0000ff"},"#urban":{"stroke":"#ff0000"},"#freshwater":{"opacity":0.5,"fill":"#a6c1fd","stroke":"#5f799d","stroke-width":0.7,"filter":null},"#salt":{"opacity":0.5,"fill":"#409b8a","stroke":"#388985","stroke-width":0.7,"filter":null},"#sinkhole":{"opacity":1,"fill":"#5bc9fd","stroke":"#53a3b0","stroke-width":0.7,"filter":null},"#frozen":{"opacity":0.95,"fill":"#cdd4e7","stroke":"#cfe0eb","stroke-width":0,"filter":null},"#lava":{"opacity":0.7,"fill":"#90270d","stroke":"#f93e0c","stroke-width":2,"filter":"url(#crumpled)"},"#dry":{"opacity":1,"fill":"#c9bfa7","stroke":"#8e816f","stroke-width":0.7,"filter":null},"#sea_island":{"opacity":0.5,"stroke":"#1f3846","stroke-width":0.7,"filter":"url(#dropShadow)","auto-filter":1},"#lake_island":{"opacity":1,"stroke":"#7c8eaf","stroke-width":0.35,"filter":null},"#terrain":{"opacity":1,"set":"gray","size":1,"density":0.4,"filter":null,"mask":null},"#rivers":{"opacity":null,"filter":null,"fill":"#2e89c2"},"#ruler":{"opacity":null,"filter":null},"#roads":{"opacity":0.9,"stroke":"#969696","stroke-width":0.7,"stroke-dasharray":"","stroke-linecap":"butt","filter":null,"mask":null},"#trails":{"opacity":0.9,"stroke":"#969696","stroke-width":0.4,"stroke-dasharray":"","stroke-linecap":"butt","filter":null,"mask":null},"#searoutes":{"opacity":0.9,"stroke":"#969696","stroke-width":0.7,"stroke-dasharray":"","stroke-linecap":"round","filter":null,"mask":null},"#statesBody":{"opacity":0.05,"filter":null},"#statesHalo":{"opacity":0.4,"data-width":8,"stroke-width":8,"filter":"blur(2px)"},"#provs":{"opacity":0.7,"fill":"#000000","font-size":4,"data-font":"Comfortaa:700","font-family":"Comfortaa","filter":null},"#temperature":{"opacity":null,"font-size":"8px","fill":"#000000","fill-opacity":0.3,"stroke":null,"stroke-width":1.8,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#ice":{"opacity":0.7,"fill":"#dfe8ec","stroke":"#000000","stroke-width":0,"filter":"url(#dropShadow05)"},"#emblems":{"opacity":0.95,"stroke-width":1,"filter":null},"#texture":{"opacity":0.2,"filter":null,"mask":"url(#land)"},"#zones":{"opacity":0.6,"stroke":"#333333","stroke-width":0,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null,"mask":null},"#oceanLayers":{"filter":null,"layers":"-6,-4,-2"},"#oceanBase":{"fill":"#2d788b"},"#oceanicPattern":{"href":"./images/kiwiroo.png","opacity":0.5},"#terrs":{"opacity":0.5,"scheme":"light","terracing":0,"skip":5,"relax":1,"curve":0,"filter":null,"mask":"url(#land)"},"#legend":{"data-size":13,"font-size":13,"data-font":"Almendra+SC","font-family":"Almendra SC","stroke":"#812929","stroke-width":2.5,"stroke-dasharray":"0 4 10 4","stroke-linecap":"round","data-x":99,"data-y":93,"data-columns":8},"#burgLabels > #cities":{"opacity":1,"fill":"#043449","text-shadow":"white 0px 0px 2px","data-size":5,"font-size":5,"data-font":"Comfortaa:700","font-family":"Comfortaa"},"#burgIcons > #cities":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":1,"stroke":"#3e3e4b","stroke-width":0.24,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #cities":{"opacity":1,"fill":"#ffffff","size":2,"stroke":"#3e3e4b","stroke-width":1.2},"#burgLabels > #towns":{"opacity":1,"fill":"#3e3e4b","text-shadow":"white 0px 0px 4px","data-size":3,"font-size":3,"data-font":"Comfortaa:700","font-family":"Comfortaa"},"#burgIcons > #towns":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":0.5,"stroke":"#3e3e4b","stroke-width":0.12,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #towns":{"opacity":1,"fill":"#ffffff","size":1,"stroke":"#3e3e4b","stroke-width":1.2},"#labels > #states":{"opacity":1,"fill":"#ffffff","stroke":"#000000","stroke-width":0.15,"text-shadow":"black 1px 1px 2px","data-size":20,"font-size":20,"data-font":"Gloria+Hallelujah","font-family":"Gloria Hallelujah","filter":null},"#labels > #addedLabels":{"opacity":1,"fill":"#3e3e4b","stroke":"#3a3a3a","stroke-width":0,"text-shadow":"white 0px 0px 4px","data-size":18,"font-size":18,"data-font":"Comfortaa","font-family":"Comfortaa","filter":null},"#fogging":{"opacity":0.97,"fill":"#8398ce","filter":null}}`,
-  styleMonochrome: `{"#map":{"background-color":"#000000","filter":"url(#filter-grayscale)","data-filter":"grayscale"},"#armies":{"font-size":6,"box-size":3,"stroke":"#000","stroke-width":0.3,"opacity":1,"fill-opacity":1,"filter":null},"#biomes":{"opacity":null,"filter":"url(#blur5)","mask":"url(#land)"},"#stateBorders":{"opacity":1,"stroke":"#56566d","stroke-width":1,"stroke-dasharray":2,"stroke-linecap":"butt","filter":null},"#provinceBorders":{"opacity":1,"stroke":"#56566d","stroke-width":0.4,"stroke-dasharray":1,"stroke-linecap":"butt","filter":null},"#cells":{"opacity":null,"stroke":"#808080","stroke-width":0.1,"filter":null,"mask":null},"#gridOverlay":{"opacity":0.8,"scale":1,"dx":0,"dy":"0","type":"pointyHex","stroke":"#808080","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"transform":null,"filter":null,"mask":null},"#coordinates":{"opacity":1,"data-size":12,"font-size":12,"stroke":"#d4d4d4","stroke-width":1,"stroke-dasharray":5,"stroke-linecap":null,"filter":null,"mask":null},"#compass":{"opacity":0.8,"transform":null,"filter":null,"mask":"url(#water)","shape-rendering":"optimizespeed"},"#rose":{"transform":null},"#relig":{"opacity":0.7,"stroke":"#404040","stroke-width":0.7,"filter":null},"#cults":{"opacity":0.6,"stroke":"#777777","stroke-width":0.5,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#landmass":{"opacity":1,"fill":"#000000","filter":null},"#markers":{"opacity":null,"rescale":1,"filter":"url(#dropShadow01)"},"#prec":{"opacity":null,"stroke":"#000000","stroke-width":0.1,"fill":"#003dff","filter":null},"#population":{"opacity":null,"stroke-width":1.6,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null},"#rural":{"stroke":"#0000ff"},"#urban":{"stroke":"#ff0000"},"#freshwater":{"opacity":1,"fill":"#000000","stroke":"#515151","stroke-width":0,"filter":null},"#salt":{"opacity":1,"fill":"#000000","stroke":"#484848","stroke-width":0,"filter":null},"#sinkhole":{"opacity":1,"fill":"#000000","stroke":"#5f5f5f","stroke-width":0.5,"filter":null},"#frozen":{"opacity":1,"fill":"#000000","stroke":"#6f6f6f","stroke-width":0,"filter":null},"#lava":{"opacity":1,"fill":"#000000","stroke":"#5d5d5d","stroke-width":0,"filter":null},"#sea_island":{"opacity":1,"stroke":"#1f3846","stroke-width":0,"filter":null,"auto-filter":0},"#lake_island":{"opacity":0,"stroke":"#7c8eaf","stroke-width":0,"filter":null},"#terrain":{"opacity":null,"set":"simple","size":1,"density":0.4,"filter":null,"mask":null},"#rivers":{"opacity":0.2,"filter":"url(#blur1)","fill":"#000000"},"#ruler":{"opacity":null,"filter":null},"#roads":{"opacity":0.9,"stroke":"#d06324","stroke-width":0.7,"stroke-dasharray":2,"stroke-linecap":"butt","filter":null,"mask":null},"#trails":{"opacity":0.9,"stroke":"#d06324","stroke-width":0.25,"stroke-dasharray":".8 1.6","stroke-linecap":"butt","filter":null,"mask":null},"#searoutes":{"opacity":0.8,"stroke":"#ffffff","stroke-width":0.45,"stroke-dasharray":"1 2","stroke-linecap":"round","filter":null,"mask":null},"#statesBody":{"opacity":0.4,"filter":null},"#statesHalo":{"opacity":0.4,"data-width":10,"stroke-width":10,"filter":"blur(5px)"},"#provs":{"opacity":0.7,"fill":"#000000","data-size":10,"font-size":10,"font-family":"Georgia","data-font":"Georgia","filter":null},"#temperature":{"opacity":null,"font-size":"8px","fill":"#000000","fill-opacity":0.3,"stroke":null,"stroke-width":1.8,"stroke-dasharray":null,"stroke-linecap":null,"filter":null},"#ice":{"opacity":0.9,"fill":"#e8f0f6","stroke":"#e8f0f6","stroke-width":1,"filter":"url(#dropShadow05)"},"#texture":{"opacity":1,"filter":null,"mask":"url(#land)"},"#emblems": {"opacity": 0.5,"stroke-width": 0.5,"filter": null},"#textureImage":{},"#zones":{"opacity":0.6,"stroke":"#333333","stroke-width":0,"stroke-dasharray":null,"stroke-linecap":"butt","filter":null,"mask":null},"#oceanLayers":{"filter":null,"layers":"none"},"#oceanBase":{"fill":"#000000"},"#oceanicPattern":{"href":"", "opacity":0.2},"#terrs":{"opacity":1,"scheme":"monochrome","terracing":0,"skip":5,"relax":0,"curve":0,"filter":"url(#blur3)","mask":"url(#land)"},"#legend":{"data-size":13,"font-size":13,"data-font":"Almendra+SC","font-family":"Almendra SC","stroke":"#812929","stroke-width":2.5,"stroke-dasharray":"0 4 10 4","stroke-linecap":"round","data-x":99,"data-y":93,"data-columns":8},"#legendBox":{},"#burgLabels > #cities":{"opacity":1,"fill":"#3e3e4b","text-shadow":"white 0 0 4px","data-size":7,"font-size":7,"data-font":"Almendra+SC","font-family":"Almendra SC"},"#burgIcons > #cities":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":1,"stroke":"#3e3e4b","stroke-width":0.24,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #cities":{"opacity":1,"fill":"#ffffff","size":2,"stroke":"#3e3e4b","stroke-width":1.2},"#burgLabels > #towns":{"opacity":1,"fill":"#3e3e4b","data-size":4,"font-size":4,"data-font":"Almendra+SC","font-family":"Almendra SC"},"#burgIcons > #towns":{"opacity":1,"fill":"#ffffff","fill-opacity":0.7,"size":0.5,"stroke":"#3e3e4b","stroke-width":0.12,"stroke-dasharray":"","stroke-linecap":"butt"},"#anchors > #towns":{"opacity":1,"fill":"#ffffff","size":1,"stroke":"#3e3e4b","stroke-width":1.2},"#labels > #states":{"opacity":1,"fill":"#3e3e4b","stroke":"#3a3a3a","stroke-width":0,"text-shadow":"white 0 0 4px","data-size":22,"font-size":22,"data-font":"Almendra+SC","font-family":"Almendra SC","filter":null},"#labels > #addedLabels":{"opacity":1,"fill":"#3e3e4b","stroke":"#3a3a3a","stroke-width":0,"text-shadow":"white 0 0 4px","data-size":18,"font-size":18,"data-font":"Almendra+SC","font-family":"Almendra SC","filter":null},"#fogging":{"opacity":0.98,"fill":"#30426f","filter":null}}`
+const vignettePresets = {
+  default: `{ "#vignette": { "opacity": 0.3, "fill": "#000000", "filter": null }, "#vignette-rect": { "x": "0.3%", "y": "0.4%", "width": "99.6%", "height": "99.2%", "rx": "5%", "ry": "5%", "filter": "blur(20px)" } }`,
+  neon: `{ "#vignette": { "opacity": 0.5, "fill": "#7300ff", "filter": null }, "#vignette-rect": { "x": "0.3%", "y": "0.4%", "width": "99.6%", "height": "99.2%", "rx": "0%", "ry": "0%", "filter": "blur(15px)" } }`,
+  smoke: `{ "#vignette": { "opacity": 1, "fill": "#000000", "filter": "url(#splotch)" }, "#vignette-rect": { "x": "3%", "y": "5%", "width": "96%", "height": "90%", "rx": "10%", "ry": "10%", "filter": "blur(100px)" } }`,
+  wound: `{ "#vignette": { "opacity": 0.8, "fill": "#ff0000", "filter": "url(#paper)"}, "#vignette-rect": {"x": "0.5%", "y": "1%", "width": "99%", "height": "98%", "rx": "5%", "ry": "5%", "filter": "blur(50px)" } }`,
+  paper: `{ "#vignette": { "opacity": 1, "fill": "#000000", "filter": "url(#paper)" }, "#vignette-rect": { "x": "0.3%", "y": "0.4%", "width": "99.6%", "height": "99.2%", "rx": "20%", "ry": "20%", "filter": "blur(150px)" } }`,
+  granite: `{ "#vignette": { "opacity": 0.95, "fill": "#231b1b", "filter": "url(#crumpled)" }, "#vignette-rect": { "x": "3%", "y": "5%", "width": "94%", "height": "90%", "rx": "20%", "ry": "20%", "filter": "blur(150px)" } }`,
+  spotlight: `{ "#vignette": { "opacity": 0.96, "fill": "#000000", "filter": null }, "#vignette-rect": { "x": "20%", "y": "30%", "width": "24%", "height": "30%", "rx": "50%", "ry": "50%", "filter": "blur(30px) "} }`
 };
 
-// apply default or custom style settings on load
-function applyStyleOnLoad() {
-  const preset = localStorage.getItem("presetStyle");
-  const style = preset && (defaultStyles[preset] || localStorage.getItem(preset));
+Object.keys(vignettePresets).forEach(preset => {
+  styleVignettePreset.options.add(new Option(preset, preset, false, false));
+});
 
-  if (preset && style && JSON.isValid(style)) {
-    applyStyle(JSON.parse(style));
-    updateMapFilter();
-    loadDefaultFonts();
-    stylePreset.value = preset;
-    stylePreset.dataset.old = preset;
-  } else {
-    if (preset && preset !== "styleDefault" && ERROR) console.error(`Style preset ${preset} is not available in localStorage, applying default style`);
-    stylePreset.value = "styleDefault";
-    stylePreset.dataset.old = preset;
-    applyDefaultStyle();
-  }
-}
+styleVignettePreset.on("change", function () {
+  const attributes = JSON.parse(vignettePresets[this.value]);
 
-// set default style
-function applyDefaultStyle() {
-  armies.attr("opacity", 1).attr("fill-opacity", 1).attr("font-size", 6).attr("box-size", 3).attr("stroke", "#000").attr("stroke-width", 0.3);
-
-  biomes.attr("opacity", null).attr("filter", null).attr("mask", "url(#land)");
-  ice.attr("opacity", 0.9).attr("fill", "#e8f0f6").attr("stroke", "#e8f0f6").attr("stroke-width", 1).attr("filter", "url(#dropShadow05)");
-  stateBorders.attr("opacity", 0.8).attr("stroke", "#56566d").attr("stroke-width", 1).attr("stroke-dasharray", "2").attr("stroke-linecap", "butt").attr("filter", null);
-  provinceBorders.attr("opacity", 0.8).attr("stroke", "#56566d").attr("stroke-width", 0.5).attr("stroke-dasharray", "0 2").attr("stroke-linecap", "round").attr("filter", null);
-  cells.attr("opacity", null).attr("stroke", "#808080").attr("stroke-width", 0.1).attr("filter", null).attr("mask", null);
-
-  gridOverlay.attr("opacity", 0.8).attr("type", "pointyHex").attr("scale", 1).attr("dx", 0).attr("dy", 0).attr("stroke", "#777777").attr("stroke-width", 0.5).attr("stroke-dasharray", null).attr("filter", null).attr("mask", null);
-  coordinates.attr("opacity", 1).attr("data-size", 12).attr("font-size", 12).attr("stroke", "#d4d4d4").attr("stroke-width", 1).attr("stroke-dasharray", 5).attr("filter", null).attr("mask", null);
-  compass.attr("opacity", 0.8).attr("transform", null).attr("filter", null).attr("mask", "url(#water)").attr("shape-rendering", "optimizespeed");
-  if (!d3.select("#initial").size()) d3.select("#rose").attr("transform", "translate(80 80) scale(.25)");
-
-  relig.attr("opacity", 0.7).attr("stroke", "#777777").attr("stroke-width", 0).attr("filter", null);
-  cults.attr("opacity", 0.6).attr("stroke", "#777777").attr("stroke-width", 0.5).attr("filter", null);
-  landmass.attr("opacity", 1).attr("fill", "#eef6fb").attr("filter", null);
-  markers.attr("opacity", null).attr("rescale", 1).attr("filter", "url(#dropShadow01)");
-
-  prec.attr("opacity", null).attr("stroke", "#000000").attr("stroke-width", 0.1).attr("fill", "#003dff").attr("filter", null);
-  population.attr("opacity", null).attr("stroke-width", 1.6).attr("stroke-dasharray", null).attr("stroke-linecap", "butt").attr("filter", null);
-  population.select("#rural").attr("stroke", "#0000ff");
-  population.select("#urban").attr("stroke", "#ff0000");
-
-  lakes.select("#freshwater").attr("opacity", 0.5).attr("fill", "#a6c1fd").attr("stroke", "#5f799d").attr("stroke-width", 0.7).attr("filter", null);
-  lakes.select("#salt").attr("opacity", 0.5).attr("fill", "#409b8a").attr("stroke", "#388985").attr("stroke-width", 0.7).attr("filter", null);
-  lakes.select("#sinkhole").attr("opacity", 1).attr("fill", "#5bc9fd").attr("stroke", "#53a3b0").attr("stroke-width", 0.7).attr("filter", null);
-  lakes.select("#frozen").attr("opacity", 0.95).attr("fill", "#cdd4e7").attr("stroke", "#cfe0eb").attr("stroke-width", 0).attr("filter", null);
-  lakes.select("#lava").attr("opacity", 0.7).attr("fill", "#90270d").attr("stroke", "#f93e0c").attr("stroke-width", 2).attr("filter", "url(#crumpled)");
-  lakes.select("#dry").attr("opacity", 1).attr("fill", "#c9bfa7").attr("stroke", "#8e816f").attr("stroke-width", 0.7).attr("filter", null);
-
-  coastline.select("#sea_island").attr("opacity", 0.5).attr("stroke", "#1f3846").attr("stroke-width", 0.7).attr("auto-filter", 1).attr("filter", "url(#dropShadow)");
-  coastline.select("#lake_island").attr("opacity", 1).attr("stroke", "#7c8eaf").attr("stroke-width", 0.35).attr("filter", null);
-
-  terrain.attr("opacity", null).attr("set", "simple").attr("size", 1).attr("density", 0.4).attr("filter", null).attr("mask", null);
-  rivers.attr("opacity", null).attr("fill", "#5d97bb").attr("filter", null);
-  ruler.attr("opacity", null).attr("filter", null);
-
-  roads.attr("opacity", 0.9).attr("stroke", "#d06324").attr("stroke-width", 0.7).attr("stroke-dasharray", "2").attr("stroke-linecap", "butt").attr("filter", null).attr("mask", null);
-  trails.attr("opacity", 0.9).attr("stroke", "#d06324").attr("stroke-width", 0.25).attr("stroke-dasharray", ".8 1.6").attr("stroke-linecap", "butt").attr("filter", null).attr("mask", null);
-  searoutes.attr("opacity", 0.8).attr("stroke", "#ffffff").attr("stroke-width", 0.45).attr("stroke-dasharray", "1 2").attr("stroke-linecap", "round").attr("filter", null).attr("mask", null);
-
-  statesBody.attr("opacity", 0.4).attr("filter", null);
-  statesHalo.attr("data-width", 10).attr("stroke-width", 10).attr("opacity", 0.4).attr("filter", "blur(5px)");
-
-  provs.attr("opacity", 0.7).attr("fill", "#000000").attr("font-family", "Georgia").attr("data-font", "Georgia").attr("data-size", 10).attr("font-size", 10).attr("filter", null);
-
-  temperature.attr("opacity", null).attr("fill", "#000000").attr("stroke-width", 1.8).attr("fill-opacity", 0.3).attr("font-size", "8px").attr("stroke-dasharray", null).attr("filter", null).attr("mask", null);
-  texture.attr("opacity", null).attr("filter", null).attr("mask", "url(#land)");
-  texture.select("#textureImage").attr("x", 0).attr("y", 0);
-  zones.attr("opacity", 0.6).attr("stroke", "#333333").attr("stroke-width", 0).attr("stroke-dasharray", null).attr("stroke-linecap", "butt").attr("filter", null).attr("mask", null);
-
-  // ocean and svg default style
-  svg.attr("background-color", "#000000").attr("data-filter", null).attr("filter", null);
-  oceanLayers.select("rect").attr("fill", "#466eab"); // old color #53679f
-  oceanLayers.attr("filter", null).attr("layers", "-6,-3,-1");
-  svg.select("#oceanicPattern").attr("href", "./images/pattern1.png").attr("opacity", 0.2);
-
-  // heightmap style
-  terrs.attr("opacity", null).attr("filter", null).attr("mask", "url(#land)").attr("stroke", "none").attr("scheme", "bright").attr("terracing", 0).attr("skip", 5).attr("relax", 0).attr("curve", 0);
-
-  // legend
-  legend.attr("font-family", "Almendra SC").attr("data-font", "Almendra+SC").attr("font-size", 13).attr("data-size", 13).attr("data-x", 99).attr("data-y", 93).attr("data-columns", 8).attr("stroke-width", 2.5).attr("stroke", "#812929").attr("stroke-dasharray", "0 4 10 4").attr("stroke-linecap", "round");
-  legend.select("#legendBox").attr("fill", "#ffffff").attr("fill-opacity", 0.8);
-
-  const citiesSize = Math.max(rn(8 - regionsInput.value / 20), 3);
-  burgLabels.select("#cities").attr("fill", "#3e3e4b").attr("opacity", 1).style("text-shadow", "white 0 0 4px").attr("font-family", "Almendra SC").attr("data-font", "Almendra+SC").attr("font-size", citiesSize).attr("data-size", citiesSize);
-  burgIcons.select("#cities").attr("opacity", 1).attr("size", 1).attr("stroke-width", 0.24).attr("fill", "#ffffff").attr("stroke", "#3e3e4b").attr("fill-opacity", 0.7).attr("stroke-dasharray", "").attr("stroke-linecap", "butt");
-  anchors.select("#cities").attr("opacity", 1).attr("fill", "#ffffff").attr("stroke", "#3e3e4b").attr("stroke-width", 1.2).attr("size", 2);
-
-  burgLabels.select("#towns").attr("fill", "#3e3e4b").attr("opacity", 1).style("text-shadow", "white 0 0 4px").attr("font-family", "Almendra SC").attr("data-font", "Almendra+SC").attr("font-size", 3).attr("data-size", 4);
-  burgIcons.select("#towns").attr("opacity", 1).attr("size", 0.5).attr("stroke-width", 0.12).attr("fill", "#ffffff").attr("stroke", "#3e3e4b").attr("fill-opacity", 0.7).attr("stroke-dasharray", "").attr("stroke-linecap", "butt");
-  anchors.select("#towns").attr("opacity", 1).attr("fill", "#ffffff").attr("stroke", "#3e3e4b").attr("stroke-width", 1.2).attr("size", 1);
-
-  const stateLabelSize = Math.max(rn(24 - regionsInput.value / 6), 6);
-  labels.select("#states").attr("fill", "#3e3e4b").attr("opacity", 1).attr("stroke", "#3a3a3a").attr("stroke-width", 0).style("text-shadow", "white 0 0 4px").attr("font-family", "Almendra SC").attr("data-font", "Almendra+SC").attr("font-size", stateLabelSize).attr("data-size", stateLabelSize).attr("filter", null);
-  labels.select("#addedLabels").attr("fill", "#3e3e4b").attr("opacity", 1).attr("stroke", "#3a3a3a").attr("stroke-width", 0).style("text-shadow", "white 0 0 4px").attr("font-family", "Almendra SC").attr("data-font", "Almendra+SC").attr("font-size", 18).attr("data-size", 18).attr("filter", null);
-
-  fogging.attr("opacity", 0.98).attr("fill", "#30426f");
-  emblems.attr("opacity", 0.9).attr("stroke-width", 1).attr("filter", null);
-}
-
-// apply style settings in JSON
-function applyStyle(style) {
-  for (const selector in style) {
+  for (const selector in attributes) {
     const el = document.querySelector(selector);
     if (!el) continue;
-    for (const attribute in style[selector]) {
-      const value = style[selector][attribute];
-
-      if (value === "null" || value === null) {
-        el.removeAttribute(attribute);
-        continue;
-      }
-
-      if (attribute === "text-shadow") {
-        el.style[attribute] = value;
-      } else {
-        el.setAttribute(attribute, value);
-      }
+    for (const attr in attributes[selector]) {
+      const value = attributes[selector][attr];
+      el.setAttribute(attr, value);
     }
   }
-}
 
-// change current style preset to another saved one
-function changeStylePreset(preset) {
-  if (customization) return tip("Please exit the customization mode first", false, "error");
+  const vignette = byId("vignette");
+  if (vignette) {
+    styleOpacityInput.value = vignette.getAttribute("opacity");
+    styleFillInput.value = styleFillOutput.value = vignette.getAttribute("fill");
+    styleFilterInput.value = vignette.getAttribute("filter");
+  }
 
-  alertMessage.innerHTML = "Are you sure you want to change the style preset? All unsaved style changes will be lost";
-  $("#alert").dialog({
-    resizable: false,
-    title: "Change style preset",
-    width: "23em",
-    buttons: {
-      Change: function () {
-        const customPreset = localStorage.getItem(preset);
-        if (customPreset) {
-          if (JSON.isValid(customPreset)) applyStyle(JSON.parse(customPreset));
-          else {
-            tip("Cannot parse stored style JSON. Default style applied", false, "error", 5000);
-            applyDefaultStyle();
-          }
-        } else if (defaultStyles[preset]) applyStyle(JSON.parse(defaultStyles[preset]));
-        else applyDefaultStyle();
-        loadUsedFonts();
+  const maskRect = byId("vignette-rect");
+  if (maskRect) {
+    const digit = str => str.replace(/[^\d.]/g, "");
+    styleVignetteX.value = digit(maskRect.getAttribute("x"));
+    styleVignetteY.value = digit(maskRect.getAttribute("y"));
+    styleVignetteWidth.value = digit(maskRect.getAttribute("width"));
+    styleVignetteHeight.value = digit(maskRect.getAttribute("height"));
+    styleVignetteRx.value = digit(maskRect.getAttribute("rx"));
+    styleVignetteRy.value = digit(maskRect.getAttribute("ry"));
+    styleVignetteBlur.value = digit(maskRect.getAttribute("filter"));
+  }
+});
 
-        removeStyleButton.style.display = stylePreset.selectedOptions[0].dataset.system ? "none" : "inline-block";
-        updateElements(); // change elements
-        selectStyleElement(); // re-select element to trigger values update
-        updateMapFilter();
-        localStorage.setItem("presetStyle", preset); // save preset to use it onload
-        stylePreset.dataset.old = stylePreset.value; // save current value
-        $(this).dialog("close");
-      },
-      Cancel: function () {
-        stylePreset.value = stylePreset.dataset.old;
-        $(this).dialog("close");
-      }
-    }
-  });
-}
+styleVignetteX.on("input", e => {
+  byId("vignette-rect")?.setAttribute("x", `${e.target.value}%`);
+});
+
+styleVignetteWidth.on("input", e => {
+  byId("vignette-rect")?.setAttribute("width", `${e.target.value}%`);
+});
+
+styleVignetteY.on("input", e => {
+  byId("vignette-rect")?.setAttribute("y", `${e.target.value}%`);
+});
+
+styleVignetteHeight.on("input", e => {
+  byId("vignette-rect")?.setAttribute("height", `${e.target.value}%`);
+});
+
+styleVignetteRx.on("input", e => {
+  byId("vignette-rect")?.setAttribute("rx", `${e.target.value}%`);
+});
+
+styleVignetteRy.on("input", e => {
+  byId("vignette-rect")?.setAttribute("ry", `${e.target.value}%`);
+});
+
+styleVignetteBlur.on("input", e => {
+  byId("vignette-rect")?.setAttribute("filter", `blur(${e.target.value}px)`);
+});
+
+styleScaleBar.on("input", function (event) {
+  const scaleBarBack = scaleBar.select("#scaleBarBack");
+  if (!scaleBarBack.size()) return;
+
+  const {id, value} = event.target;
+
+  if (id === "styleScaleBarSize") scaleBar.attr("data-bar-size", value);
+  else if (id === "styleScaleBarFontSize") scaleBar.attr("font-size", value);
+  else if (id === "styleScaleBarPositionX") scaleBar.attr("data-x", value);
+  else if (id === "styleScaleBarPositionY") scaleBar.attr("data-y", value);
+  else if (id === "styleScaleBarLabel") scaleBar.attr("data-label", value);
+  else if (id === "styleScaleBarBackgroundOpacity") scaleBarBack.attr("opacity", value);
+  else if (id === "styleScaleBarBackgroundFill") scaleBarBack.attr("fill", value);
+  else if (id === "styleScaleBarBackgroundStroke") scaleBarBack.attr("stroke", value);
+  else if (id === "styleScaleBarBackgroundStrokeWidth") scaleBarBack.attr("stroke-width", value);
+  else if (id === "styleScaleBarBackgroundFilter") scaleBarBack.attr("filter", value);
+  else if (id === "styleScaleBarBackgroundPaddingTop") scaleBarBack.attr("data-top", value);
+  else if (id === "styleScaleBarBackgroundPaddingRight") scaleBarBack.attr("data-right", value);
+  else if (id === "styleScaleBarBackgroundPaddingBottom") scaleBarBack.attr("data-bottom", value);
+  else if (id === "styleScaleBarBackgroundPaddingLeft") scaleBarBack.attr("data-left", value);
+
+  if (
+    [
+      "styleScaleBarSize",
+      "styleScaleBarPositionX",
+      "styleScaleBarPositionY",
+      "styleScaleBarLabel",
+      "styleScaleBarBackgroundPaddingLeft",
+      "styleScaleBarBackgroundPaddingTop",
+      "styleScaleBarBackgroundPaddingRight",
+      "styleScaleBarBackgroundPaddingBottom"
+    ].includes(id)
+  ) {
+    drawScaleBar(scaleBar, scale);
+    fitScaleBar(scaleBar, svgWidth, svgHeight);
+  }
+});
 
 function updateElements() {
   // burgIcons to desired size
-  burgIcons.selectAll("g").each(function (d) {
+  burgIcons.selectAll("g").each(function () {
     const size = +this.getAttribute("size");
     d3.select(this)
       .selectAll("circle")
@@ -956,167 +1173,8 @@ function updateElements() {
   invokeActiveZooming();
 }
 
-function addStylePreset() {
-  $("#styleSaver").dialog({
-    title: "Style Saver",
-    width: "26em",
-    position: {my: "center", at: "center", of: "svg"}
-  });
-
-  const currentStyle = document.getElementById("stylePreset").selectedOptions[0].text;
-  document.getElementById("styleSaverName").value = currentStyle;
-  styleSaverJSON.value = JSON.stringify(getStyle(), null, 2);
-  checkName();
-
-  if (modules.saveStyle) return;
-  modules.saveStyle = true;
-
-  // add listeners
-  document.getElementById("styleSaverName").addEventListener("input", checkName);
-  document.getElementById("styleSaverSave").addEventListener("click", saveStyle);
-  document.getElementById("styleSaverDownload").addEventListener("click", styleDownload);
-  document.getElementById("styleSaverLoad").addEventListener("click", () => styleToLoad.click());
-  document.getElementById("styleToLoad").addEventListener("change", function () {
-    uploadFile(this, styleUpload);
-  });
-
-  function getStyle() {
-    const style = {};
-    const attributes = {
-      "#map": ["background-color", "filter", "data-filter"],
-      "#armies": ["font-size", "box-size", "stroke", "stroke-width", "fill-opacity", "filter"],
-      "#biomes": ["opacity", "filter", "mask"],
-      "#stateBorders": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter"],
-      "#provinceBorders": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter"],
-      "#cells": ["opacity", "stroke", "stroke-width", "filter", "mask"],
-      "#gridOverlay": ["opacity", "scale", "dx", "dy", "type", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "transform", "filter", "mask"],
-      "#coordinates": ["opacity", "data-size", "font-size", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter", "mask"],
-      "#compass": ["opacity", "transform", "filter", "mask", "shape-rendering"],
-      "#rose": ["transform"],
-      "#relig": ["opacity", "stroke", "stroke-width", "filter"],
-      "#cults": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter"],
-      "#landmass": ["opacity", "fill", "filter"],
-      "#markers": ["opacity", "rescale", "filter"],
-      "#prec": ["opacity", "stroke", "stroke-width", "fill", "filter"],
-      "#population": ["opacity", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter"],
-      "#rural": ["stroke"],
-      "#urban": ["stroke"],
-      "#freshwater": ["opacity", "fill", "stroke", "stroke-width", "filter"],
-      "#salt": ["opacity", "fill", "stroke", "stroke-width", "filter"],
-      "#sinkhole": ["opacity", "fill", "stroke", "stroke-width", "filter"],
-      "#frozen": ["opacity", "fill", "stroke", "stroke-width", "filter"],
-      "#lava": ["opacity", "fill", "stroke", "stroke-width", "filter"],
-      "#dry": ["opacity", "fill", "stroke", "stroke-width", "filter"],
-      "#sea_island": ["opacity", "stroke", "stroke-width", "filter", "auto-filter"],
-      "#lake_island": ["opacity", "stroke", "stroke-width", "filter"],
-      "#terrain": ["opacity", "set", "size", "density", "filter", "mask"],
-      "#rivers": ["opacity", "filter", "fill"],
-      "#ruler": ["opacity", "filter"],
-      "#roads": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter", "mask"],
-      "#trails": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter", "mask"],
-      "#searoutes": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter", "mask"],
-      "#statesBody": ["opacity", "filter"],
-      "#statesHalo": ["opacity", "data-width", "stroke-width", "filter"],
-      "#provs": ["opacity", "fill", "font-size", "data-font", "font-family", "filter"],
-      "#temperature": ["opacity", "font-size", "fill", "fill-opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter"],
-      "#ice": ["opacity", "fill", "stroke", "stroke-width", "filter"],
-      "#emblems": ["opacity", "stroke-width", "filter"],
-      "#texture": ["opacity", "filter", "mask"],
-      "#textureImage": ["x", "y"],
-      "#zones": ["opacity", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "filter", "mask"],
-      "#oceanLayers": ["filter", "layers"],
-      "#oceanBase": ["fill"],
-      "#oceanicPattern": ["href", "opacity"],
-      "#terrs": ["opacity", "scheme", "terracing", "skip", "relax", "curve", "filter", "mask"],
-      "#legend": ["data-size", "font-size", "data-font", "font-family", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap", "data-x", "data-y", "data-columns"],
-      "#legendBox": ["fill", "fill-opacity"],
-      "#burgLabels > #cities": ["opacity", "fill", "text-shadow", "data-size", "font-size", "data-font", "font-family"],
-      "#burgIcons > #cities": ["opacity", "fill", "fill-opacity", "size", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap"],
-      "#anchors > #cities": ["opacity", "fill", "size", "stroke", "stroke-width"],
-      "#burgLabels > #towns": ["opacity", "fill", "text-shadow", "data-size", "font-size", "data-font", "font-family"],
-      "#burgIcons > #towns": ["opacity", "fill", "fill-opacity", "size", "stroke", "stroke-width", "stroke-dasharray", "stroke-linecap"],
-      "#anchors > #towns": ["opacity", "fill", "size", "stroke", "stroke-width"],
-      "#labels > #states": ["opacity", "fill", "stroke", "stroke-width", "text-shadow", "data-size", "font-size", "data-font", "font-family", "filter"],
-      "#labels > #addedLabels": ["opacity", "fill", "stroke", "stroke-width", "text-shadow", "data-size", "font-size", "data-font", "font-family", "filter"],
-      "#fogging": ["opacity", "fill", "filter"]
-    };
-
-    for (const selector in attributes) {
-      const el = document.querySelector(selector);
-      if (!el) continue;
-
-      style[selector] = {};
-      for (const attr of attributes[selector]) {
-        let value = el.style[attr] || el.getAttribute(attr);
-        if (attr === "font-size" && el.hasAttribute("data-size")) value = el.getAttribute("data-size");
-        style[selector][attr] = parseValue(value);
-      }
-    }
-
-    function parseValue(value) {
-      if (value === "null" || value === null) return null;
-      if (value === "") return "";
-      if (!isNaN(+value)) return +value;
-      return value;
-    }
-
-    return style;
-  }
-
-  function checkName() {
-    let tip = "";
-    const v = "style" + styleSaverName.value;
-    const listed = Array.from(stylePreset.options).some(o => o.value == v);
-    const stored = localStorage.getItem(v);
-    if (!stored && listed) tip = "default";
-    else if (stored) tip = "existing";
-    else if (styleSaverName.value) tip = "new";
-    styleSaverTip.innerHTML = tip;
-  }
-
-  function saveStyle() {
-    if (!styleSaverJSON.value) return tip("Please provide a style JSON", false, "error");
-    if (!JSON.isValid(styleSaverJSON.value)) return tip("JSON string is not valid, please check the format", false, "error");
-    if (!styleSaverName.value) return tip("Please provide a preset name", false, "error");
-    if (styleSaverTip.innerHTML === "default") return tip("You cannot overwrite default preset, please change the name", false, "error");
-
-    const preset = "style" + styleSaverName.value;
-    applyOption(stylePreset, preset, styleSaverName.value); // add option
-    localStorage.setItem("presetStyle", preset); // mark preset as default
-    localStorage.setItem(preset, styleSaverJSON.value); // save preset
-    $("#styleSaver").dialog("close");
-    removeStyleButton.style.display = "inline-block";
-    tip("Style preset is saved", false, "success", 4000);
-  }
-
-  function styleDownload() {
-    if (!styleSaverJSON.value) return tip("Please provide a style JSON", false, "error");
-    if (!JSON.isValid(styleSaverJSON.value)) return tip("JSON string is not valid, please check the format", false, "error");
-    if (!styleSaverName.value) return tip("Please provide a preset name", false, "error");
-
-    const data = styleSaverJSON.value;
-    if (!data) return tip("Please provide a style JSON", false, "error");
-    downloadFile(data, "style" + styleSaverName.value + ".json", "application/json");
-  }
-
-  function styleUpload(dataLoaded) {
-    if (!dataLoaded) return tip("Cannot load the file. Please check the data format", false, "error");
-    const data = JSON.stringify(JSON.parse(dataLoaded), null, 2);
-    styleSaverJSON.value = data;
-  }
-}
-
-function removeStylePreset() {
-  if (stylePreset.selectedOptions[0].dataset.system) return tip("Cannot remove system preset", false, "error");
-
-  localStorage.removeItem("presetStyle");
-  localStorage.removeItem(stylePreset.value);
-  stylePreset.selectedOptions[0].remove();
-  removeStyleButton.style.display = "none";
-}
-
 // GLOBAL FILTERS
-mapFilters.addEventListener("click", applyMapFilter);
+mapFilters.on("click", applyMapFilter);
 function applyMapFilter(event) {
   if (event.target.tagName !== "BUTTON") return;
   const button = event.target;
@@ -1126,11 +1184,4 @@ function applyMapFilter(event) {
   mapFilters.querySelectorAll(".pressed").forEach(button => button.classList.remove("pressed"));
   button.classList.add("pressed");
   svg.attr("data-filter", button.id).attr("filter", "url(#filter-" + button.id + ")");
-}
-
-function updateMapFilter() {
-  const filter = svg.attr("data-filter");
-  mapFilters.querySelectorAll(".pressed").forEach(button => button.classList.remove("pressed"));
-  if (!filter) return;
-  mapFilters.querySelector("#" + filter).classList.add("pressed");
 }

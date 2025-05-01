@@ -1,163 +1,208 @@
 "use strict";
-function editNotes(id, name) {
-  // update list of objects
-  const select = document.getElementById("notesSelect");
-  select.options.length = 0;
-  for (const note of notes) {
-    select.options.add(new Option(note.id, note.id));
-  }
 
-  // initiate pell (html editor)
-  const editor = Pell.init({
-    element: document.getElementById("notesText"),
-    onChange: html => {
-      const id = document.getElementById("notesSelect").value;
-      const note = notes.find(note => note.id === id);
-      if (!note) return;
-      note.legend = html;
-      showNote(note);
-    }
-  });
+function editNotes(id, name) {
+  // elements
+  const notesLegend = byId("notesLegend");
+  const notesName = byId("notesName");
+  const notesSelect = byId("notesSelect");
+  const notesPin = byId("notesPin");
+
+  // update list of objects
+  notesSelect.options.length = 0;
+  notes.forEach(({id}) => notesSelect.options.add(new Option(id, id)));
+
+  // update pin notes icon
+  const notesArePinned = options.pinNotes;
+  if (notesArePinned) notesPin.classList.add("pressed");
+  else notesPin.classList.remove("pressed");
 
   // select an object
   if (notes.length || id) {
     if (!id) id = notes[0].id;
     let note = notes.find(note => note.id === id);
-    if (note === undefined) {
+    if (!note) {
       if (!name) name = id;
       note = {id, name, legend: ""};
       notes.push(note);
-      select.options.add(new Option(id, id));
+      notesSelect.options.add(new Option(id, id));
     }
-    select.value = id;
+
+    notesSelect.value = id;
     notesName.value = note.name;
-    editor.content.innerHTML = note.legend;
-    showNote(note);
+    notesLegend.innerHTML = note.legend;
+    initEditor();
+    updateNotesBox(note);
   } else {
-    editor.content.innerHTML = "There are no added notes. Click on element (e.g. label) and add a free text note";
-    document.getElementById("notesName").value = "";
+    // if notes array is empty
+    notesName.value = "";
+    notesLegend.innerHTML = "No notes added. Click on an element (e.g. label or marker) and add a free text note";
   }
 
-  // open a dialog
   $("#notesEditor").dialog({
     title: "Notes Editor",
-    minWidth: "40em",
-    width: "50vw",
+    width: svgWidth * 0.8,
+    height: svgHeight * 0.75,
     position: {my: "center", at: "center", of: "svg"},
-    close: () => (notesText.innerHTML = "")
+    close: removeEditor
   });
 
   if (modules.editNotes) return;
   modules.editNotes = true;
 
   // add listeners
-  document.getElementById("notesSelect").addEventListener("change", changeObject);
-  document.getElementById("notesName").addEventListener("input", changeName);
-  document.getElementById("notesPin").addEventListener("click", () => (options.pinNotes = !options.pinNotes));
-  document.getElementById("notesSpeak").addEventListener("click", () => speak(editor.content.innerHTML));
-  document.getElementById("notesFocus").addEventListener("click", validateHighlightElement);
-  document.getElementById("notesDownload").addEventListener("click", downloadLegends);
-  document.getElementById("notesUpload").addEventListener("click", () => legendsToLoad.click());
-  document.getElementById("legendsToLoad").addEventListener("change", function () {
+  byId("notesSelect").addEventListener("change", changeElement);
+  byId("notesName").addEventListener("input", changeName);
+  byId("notesLegend").addEventListener("blur", updateLegend);
+  byId("notesPin").addEventListener("click", toggleNotesPin);
+  byId("notesFocus").addEventListener("click", validateHighlightElement);
+  byId("notesGenerateWithAi").addEventListener("click", openAiGenerator);
+  byId("notesDownload").addEventListener("click", downloadLegends);
+  byId("notesUpload").addEventListener("click", () => legendsToLoad.click());
+  byId("legendsToLoad").addEventListener("change", function () {
     uploadFile(this, uploadLegends);
   });
-  document.getElementById("notesClearStyle").addEventListener("click", clearStyle);
-  document.getElementById("notesRemove").addEventListener("click", triggerNotesRemove);
+  byId("notesRemove").addEventListener("click", triggerNotesRemove);
 
-  function showNote(note) {
-    document.getElementById("notes").style.display = "block";
-    document.getElementById("notesHeader").innerHTML = note.name;
-    document.getElementById("notesBody").innerHTML = note.legend;
+  async function initEditor() {
+    if (!window.tinymce) {
+      const url = "https://azgaar.github.io/Fantasy-Map-Generator/libs/tinymce/tinymce.min.js";
+      try {
+        await import(url);
+      } catch (error) {
+        // error may be caused by failed request being cached, try again with random hash
+        try {
+          const hash = Math.random().toString(36).substring(2, 15);
+          await import(`${url}#${hash}`);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+
+    if (window.tinymce) {
+      window.tinymce._setBaseUrl("https://azgaar.github.io/Fantasy-Map-Generator/libs/tinymce");
+      tinymce.init({
+        license_key: "gpl",
+        selector: "#notesLegend",
+        height: "90%",
+        menubar: false,
+        plugins: `autolink lists link charmap code fullscreen image link media table wordcount`,
+        toolbar: `code | undo redo | removeformat | bold italic strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | fontselect fontsizeselect | blockquote hr charmap | print fullscreen`,
+        media_alt_source: false,
+        media_poster: false,
+        browser_spellcheck: true,
+        contextmenu: false,
+        setup: editor => {
+          editor.on("Change", updateLegend);
+        }
+      });
+    }
   }
 
-  function changeObject() {
+  function updateLegend() {
+    const note = notes.find(note => note.id === notesSelect.value);
+    if (!note) return tip("Note element is not found", true, "error", 4000);
+
+    const isTinyEditorActive = window.tinymce?.activeEditor;
+    note.legend = isTinyEditorActive ? tinymce.activeEditor.getContent() : notesLegend.innerHTML;
+    updateNotesBox(note);
+  }
+
+  function updateNotesBox(note) {
+    byId("notesHeader").innerHTML = note.name;
+    byId("notesBody").innerHTML = note.legend;
+  }
+
+  function changeElement() {
     const note = notes.find(note => note.id === this.value);
-    if (!note) return;
+    if (!note) return tip("Note element is not found", true, "error", 4000);
+
     notesName.value = note.name;
-    editor.content.innerHTML = note.legend;
+    notesLegend.innerHTML = note.legend;
+    updateNotesBox(note);
+
+    if (window.tinymce) tinymce.activeEditor.setContent(note.legend);
   }
 
   function changeName() {
-    const id = document.getElementById("notesSelect").value;
-    const note = notes.find(note => note.id === id);
-    if (!note) return;
+    const note = notes.find(note => note.id === notesSelect.value);
+    if (!note) return tip("Note element is not found", true, "error", 4000);
+
     note.name = this.value;
-    showNote(note);
   }
 
   function validateHighlightElement() {
-    const select = document.getElementById("notesSelect");
-    const element = document.getElementById(select.value);
+    const element = byId(notesSelect.value);
+    if (element) return highlightElement(element, 3);
 
-    // if element is not found
-    if (element === null) {
-      alertMessage.innerHTML = "Related element is not found. Would you like to remove the note?";
-      $("#alert").dialog({
-        resizable: false,
-        title: "Element not found",
-        buttons: {
-          Remove: function () {
-            $(this).dialog("close");
-            removeLegend();
-          },
-          Keep: function () {
-            $(this).dialog("close");
-          }
-        }
-      });
-      return;
-    }
-
-    highlightElement(element); // if element is found
-  }
-
-  function downloadLegends() {
-    const data = JSON.stringify(notes);
-    const name = getFileName("Notes") + ".txt";
-    downloadFile(data, name);
-  }
-
-  function uploadLegends(dataLoaded) {
-    if (!dataLoaded) {
-      tip("Cannot load the file. Please check the data format", false, "error");
-      return;
-    }
-    notes = JSON.parse(dataLoaded);
-    document.getElementById("notesSelect").options.length = 0;
-    editNotes(notes[0].id, notes[0].name);
-  }
-
-  function clearStyle() {
-    editor.content.innerHTML = editor.content.textContent;
-  }
-
-  function triggerNotesRemove() {
-    alertMessage.innerHTML = "Are you sure you want to remove the selected note?";
-    $("#alert").dialog({
-      resizable: false,
-      title: "Remove note",
-      buttons: {
-        Remove: function () {
-          $(this).dialog("close");
-          removeLegend();
-        },
-        Keep: function () {
-          $(this).dialog("close");
-        }
-      }
+    confirmationDialog({
+      title: "Element not found",
+      message: "Note element is not found. Would you like to remove the note?",
+      confirm: "Remove",
+      cancel: "Keep",
+      onConfirm: removeLegend
     });
   }
 
-  function removeLegend() {
-    const select = document.getElementById("notesSelect");
-    const index = notes.findIndex(n => n.id === select.value);
-    notes.splice(index, 1);
-    select.options.length = 0;
-    if (!notes.length) {
-      $("#notesEditor").dialog("close");
-      return;
-    }
-    notesText.innerHTML = "";
+  function openAiGenerator() {
+    const note = notes.find(note => note.id === notesSelect.value);
+
+    let prompt = `Respond with description. Use simple dry language. Invent facts, names and details. Split to paragraphs and format to HTML. Remove h tags, remove markdown.`;
+    if (note?.name) prompt += ` Name: ${note.name}.`;
+    if (note?.legend) prompt += ` Data: ${note.legend}`;
+
+    const onApply = result => {
+      notesLegend.innerHTML = result;
+      if (note) {
+        note.legend = result;
+        updateNotesBox(note);
+        if (window.tinymce) tinymce.activeEditor.setContent(note.legend);
+      }
+    };
+
+    generateWithAi(prompt, onApply);
+  }
+
+  function downloadLegends() {
+    const notesData = JSON.stringify(notes);
+    const name = getFileName("Notes") + ".txt";
+    downloadFile(notesData, name);
+  }
+
+  function uploadLegends(dataLoaded) {
+    if (!dataLoaded) return tip("Cannot load the file. Please check the data format", false, "error");
+    notes = JSON.parse(dataLoaded);
+    notesSelect.options.length = 0;
     editNotes(notes[0].id, notes[0].name);
+  }
+
+  function triggerNotesRemove() {
+    function removeLegend() {
+      notes = notes.filter(({id}) => id !== notesSelect.value);
+
+      if (!notes.length) {
+        $("#notesEditor").dialog("close");
+        return;
+      }
+
+      removeEditor();
+      editNotes(notes[0].id, notes[0].name);
+    }
+
+    confirmationDialog({
+      title: "Remove note",
+      message: "Are you sure you want to remove the selected note? There is no way to undo this action",
+      confirm: "Remove",
+      onConfirm: removeLegend
+    });
+  }
+
+  function toggleNotesPin() {
+    options.pinNotes = !options.pinNotes;
+    this.classList.toggle("pressed");
+  }
+
+  function removeEditor() {
+    if (window.tinymce) tinymce.remove();
   }
 }
